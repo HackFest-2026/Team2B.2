@@ -1,0 +1,28 @@
+================================================================================
+RECORD OF INVESTIGATIVE INTERVIEW
+CASE REF: IR-2026-0914-ALPHA
+CLASSIFICATION: UNCLASSIFIED (LEVEL 1)
+DATE: 2026-10-08 09:30:00 UTC
+LOCATION: Interview Room 3B, Cyber Defense Directorate
+INTERVIEWER: Special Agent Marcus Vance
+INTERVIEWEE: Alice Chen (Senior Infrastructure Administrator)
+================================================================================
+
+[09:30:15] AGENT VANCE: Good morning, Alice. We are documenting the timeline for the unexpected database access detected last night on the primary cluster. For the record, could you walk us through your activities on the evening of October 7th?
+
+[09:31:02] ALICE CHEN: Yes, of course. I had scheduled routine maintenance on the web proxy servers earlier that afternoon. Everything concluded without issue around 20:30 UTC. 
+
+[09:31:45] AGENT VANCE: Did you remain on the network after completing that maintenance window?
+
+[09:32:10] ALICE CHEN: No. I wrapped up my documentation notes and completely logged out of my workstation and disconnected the secure corporate VPN promptly at 21:00 UTC on October 7. I shut down my laptop and left the building.
+
+[09:33:05] AGENT VANCE: To be completely clear, did you access or initiate any remote administrative sessions toward db-primary.internal or any database systems between 21:00 and 22:00 UTC?
+
+[09:33:30] ALICE CHEN: Absolutely not. I was entirely offline and in transit home during that entire period. I did not touch the database server or open any remote administrative sessions that evening.
+
+[09:34:10] AGENT VANCE: Did you share your private RSA credential or passkeys with any third party or colleague?
+
+[09:34:25] ALICE CHEN: Never. My YubiKey and RSA hardware keys remained in my possession at all times.
+
+[09:35:00] AGENT VANCE: Thank you, Alice. This interview transcript is logged under evidence ID EV-TXT-002.
+================================================================================

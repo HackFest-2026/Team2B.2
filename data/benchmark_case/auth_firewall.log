@@ -1,0 +1,16 @@
+# SECURITY AUDIT LOG ARCHIVE - GATEWAY & AUTH CLUSTERS
+# CLASSIFICATION: LEVEL 2 - RESTRICTED // INTERNAL USE ONLY
+# EVIDENCE_ID: EV-LOG-003
+# CHECKSUM_ALGORITHM: SHA256
+
+2026-10-07T20:50:11.104Z gw-datacenter-01 openvpn[1204]: IP 192.168.1.105 TLS Handshake OK, Peer Cert Subject: CN=alice_admin, OU=DevOps
+2026-10-07T20:50:12.890Z gw-datacenter-01 openvpn[1204]: [alice_admin] Peer Connection Initiated with [AF_INET]192.168.1.105:49182 -> Assigned Virtual IP: 10.240.1.45
+2026-10-07T20:55:00.002Z gw-datacenter-01 kernel: [FIREWALL-PERMIT] proto=TCP src=10.240.1.45 dst=10.240.0.10:443 rule=ProxyMaintAccess action=ACCEPT
+2026-10-07T21:00:00.000Z gw-datacenter-01 openvpn[1204]: [alice_admin] KeepAlive Echo Request received from 10.240.1.45 - Session Active
+2026-10-07T21:08:15.420Z core-router-01 iptables: [TRAFFIC-MON] flow_id=88129 src=10.240.1.45 dst=10.240.5.12:22 flags=SYN len=60
+2026-10-07T21:14:22.019Z db-primary.internal sshd[4412]: Accepted publickey for alice_admin from 10.240.1.45 port 52188 ssh2: RSA SHA256:7uKx901VmlwQZ
+2026-10-07T21:14:22.450Z db-primary.internal systemd-logind[781]: New session 184 of user alice_admin
+2026-10-07T21:18:40.812Z db-primary.internal psql[9921]: AUDIT: SESSION_ID=184 USER=alice_admin ACTION=SELECT pg_dump_table FROM confidential.customers_pii ROW_COUNT=14200
+2026-10-07T21:22:10.005Z db-primary.internal sshd[4412]: Received disconnect from 10.240.1.45 port 52188: 11: disconnected by user
+2026-10-07T21:22:10.012Z db-primary.internal systemd-logind[781]: Removed session 184
+2026-10-07T21:24:05.670Z gw-datacenter-01 openvpn[1204]: [alice_admin] SIGTERM received, sending exit notification to peer. Session Terminated. Total bytes_out=8421900
