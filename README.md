@@ -128,6 +128,64 @@ backend/tests/test_phase2_ingestion.py::test_upload_role_authorization_enforced 
 
 ---
 
+### 📦 Phase 3: AI Intelligence, Conflict Radar & Chronological Reconciliation
+* **Status:** ✅ **COMPLETED & TEST VERIFIED**
+* **Tools & Stack Used:**
+  * **AI & NLP Engines:** Local Ollama Client (`backend/ai/ollama_client.py`), Entity Resolution Parser (`entity_extractor.py`), Chronological Sequencing Engine (`timeline_builder.py`), NLI Contradiction Detector (`conflict_detector.py`)
+  * **Hardware Optimization:** Engineered for NVIDIA RTX 5050 (8GB VRAM) and Intel i5-13450HX running `llama3.2:3b` / `mistral:7b` locally in-VRAM with zero offload latency.
+  * **Frontend UI:** `WorkspaceView.jsx` (Unified Timeline & Entity Matrix) and `ConflictRadarView.jsx` (Side-by-side contradiction comparator with Apple-Design Liquid Glass styling)
+
+#### What We Built in Phase 3:
+1. **Cross-Source Entity Resolution (`backend/ai/entity_extractor.py`):**
+   * Resolves actors (`Alice Chen`, `Agent Marcus Vance`), linked accounts (`alice_admin`), systems (`db-primary.internal`, `gw-datacenter-01`), and network IPs across all sources.
+   * Enforces dynamic clearance masking: internal `10.x.x.x` addresses are masked with `[REDACTED - LEVEL 2]` for Level 1 compliance callers.
+2. **Unified Chronological Timeline Builder (`timeline_builder.py`):**
+   * Merges extracted actions across PDFs, witness transcripts, and syslogs into an authoritative chronological order (20:30 UTC through 22:30 UTC).
+   * Flags events involved in contradictions as highlighted conflict anchors.
+3. **Cross-Source Conflict Radar (`conflict_detector.py`):**
+   * Automatically cross-examines human statements against machine syslogs.
+   * **Contradiction #1:** Witness stated complete logoff and VPN disconnection at 21:00 UTC, directly contradicted by gateway keepalive at 21:00:00 UTC and an SSH session opened from her credentials at 21:14:22 UTC.
+   * **Contradiction #2:** Witness denied database access, directly contradicted by PostgreSQL audit log recording `SELECT pg_dump_table` on `confidential.customers_pii` at 21:18:40 UTC.
+   * Formulates forensic verdicts and actionable investigator directives.
+4. **Interactive UI Views (`WorkspaceView.jsx` & `ConflictRadarView.jsx`):**
+   * Side-by-side claim comparator cards with exact source quotes, time anchors, and SHA-256 chunk seals.
+   * Filterable chronological timeline with status badges.
+
+#### Phase 3 Verification Test Suite (`Test-3`):
+Validated via `python -m pytest backend/tests/ -v`:
+
+```bash
+$ python -m pytest backend/tests/ -v
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+collected 20 items
+
+backend/tests/test_phase1_auth.py::test_health_endpoint PASSED           [  5%]
+backend/tests/test_phase1_auth.py::test_login_officer_lead PASSED        [ 10%]
+backend/tests/test_phase1_auth.py::test_login_investigator_l2 PASSED     [ 15%]
+backend/tests/test_phase1_auth.py::test_login_auditor_l1 PASSED          [ 20%]
+backend/tests/test_phase1_auth.py::test_login_invalid_credentials PASSED [ 25%]
+backend/tests/test_phase1_auth.py::test_auth_me_with_valid_and_invalid_tokens PASSED [ 30%]
+backend/tests/test_phase1_auth.py::test_benchmark_files_existence_and_integrity PASSED [ 35%]
+backend/tests/test_phase2_ingestion.py::test_pdf_parser_extraction PASSED [ 40%]
+backend/tests/test_phase2_ingestion.py::test_log_parser_extraction PASSED [ 45%]
+backend/tests/test_phase2_ingestion.py::test_transcript_parser_extraction PASSED [ 50%]
+backend/tests/test_phase2_ingestion.py::test_sha256_cryptographic_fingerprinting PASSED [ 55%]
+backend/tests/test_phase2_ingestion.py::test_pre_retrieval_clearance_zero_spillage PASSED [ 60%]
+backend/tests/test_phase2_ingestion.py::test_level2_investigator_receives_all_chunks PASSED [ 65%]
+backend/tests/test_phase2_ingestion.py::test_upload_role_authorization_enforced PASSED [ 70%]
+backend/tests/test_phase3_intelligence.py::test_entity_extraction_resolution PASSED [ 75%]
+backend/tests/test_phase3_intelligence.py::test_unified_timeline_chronology PASSED [ 80%]
+backend/tests/test_phase3_intelligence.py::test_conflict_radar_detection PASSED [ 85%]
+backend/tests/test_phase3_intelligence.py::test_conflict_provenance_cryptographic_anchors PASSED [ 90%]
+backend/tests/test_phase3_intelligence.py::test_zero_spillage_on_conflicts_and_entities PASSED [ 95%]
+backend/tests/test_phase3_intelligence.py::test_analysis_run_api_endpoint PASSED [100%]
+
+======================= 20 passed in 0.52s =======================
+```
+
+---
+
 ## 🛠️ How to Run Locally
 
 ### 1. Backend (FastAPI)
@@ -152,6 +210,5 @@ python -m pytest backend/tests/ -v
 ---
 
 ## 🗺️ Next Steps
-* **Phase 3:** Local Ollama AI Engine, Zero-Spillage Pre-Retrieval Gating, and Conflict Radar.
-* **Phase 4:** Apple-Design Investigation Workspace with Clickable Citation Anchors.
-* **Phase 5:** Verified PDF Dossier Export & Live Benchmark KPI Evaluation Screen.
+* **Phase 4:** Synthesized Dossier with Interactive Clickable Citation Anchors & Slide-Over Evidence Inspector.
+* **Phase 5:** Verified Cryptographic PDF Report Export & Live Benchmark KPI Evaluation Screen.

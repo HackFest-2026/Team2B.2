@@ -203,6 +203,94 @@ async def upload_evidence_file(
         "file_details": result
     }
 
+# ----------------- Phase 3 AI Intelligence & Conflict Radar -----------------
+from backend.ai.entity_extractor import extract_entities_from_chunks
+from backend.ai.timeline_builder import build_unified_timeline
+from backend.ai.conflict_detector import detect_cross_source_conflicts
+from backend.ai.ollama_client import local_ai
+
+@app.get("/api/analysis/entities")
+def get_entities(
+    simulate_clearance: Optional[str] = Query(None),
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Returns resolved entities, with internal Level 2 assets masked for Level 1 users."""
+    effective_clearance = user["clearance"]
+    if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
+        effective_clearance = CLEARANCE_LEVEL_1
+
+    chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    return extract_entities_from_chunks(chunks, user_clearance=effective_clearance)
+
+@app.get("/api/analysis/timeline")
+def get_timeline(
+    simulate_clearance: Optional[str] = Query(None),
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Returns unified chronological incident events with source citations."""
+    effective_clearance = user["clearance"]
+    if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
+        effective_clearance = CLEARANCE_LEVEL_1
+
+    chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    events = build_unified_timeline(chunks, user_clearance=effective_clearance)
+    return {
+        "effective_clearance": effective_clearance,
+        "total_events": len(events),
+        "events": events
+    }
+
+@app.get("/api/analysis/conflicts")
+def get_conflicts(
+    simulate_clearance: Optional[str] = Query(None),
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Returns detected cross-source contradictions.
+    Level 1 callers see restricted evidence masked with zero data spillage.
+    """
+    effective_clearance = user["clearance"]
+    if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
+        effective_clearance = CLEARANCE_LEVEL_1
+
+    chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    conflicts = detect_cross_source_conflicts(chunks, user_clearance=effective_clearance)
+    return {
+        "effective_clearance": effective_clearance,
+        "total_conflicts": len(conflicts),
+        "conflicts": conflicts
+    }
+
+@app.post("/api/analysis/run")
+def trigger_analysis(
+    simulate_clearance: Optional[str] = Query(None),
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Executes full on-prem AI analysis across all ingested sources."""
+    effective_clearance = user["clearance"]
+    if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
+        effective_clearance = CLEARANCE_LEVEL_1
+
+    chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    entities = extract_entities_from_chunks(chunks, user_clearance=effective_clearance)
+    timeline = build_unified_timeline(chunks, user_clearance=effective_clearance)
+    conflicts = detect_cross_source_conflicts(chunks, user_clearance=effective_clearance)
+
+    return {
+        "status": "success",
+        "case_id": "IR-2026-0914-ALPHA",
+        "gpu_inference_mode": "Ollama / On-Prem Native",
+        "clearance_applied": effective_clearance,
+        "summary": {
+            "entities_resolved": entities["total_actors"] + entities["total_systems"] + entities["total_ips"],
+            "timeline_events": len(timeline),
+            "conflicts_detected": len(conflicts)
+        },
+        "entities": entities,
+        "timeline": timeline,
+        "conflicts": conflicts
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
