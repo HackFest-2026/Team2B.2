@@ -124,23 +124,22 @@ export default function App() {
           )}
 
           {!['overview', 'ingestion', 'workspace', 'conflicts', 'dossier', 'audit'].includes(activeTab) && (
-            <div className="bg-white border border-slate-200 p-8 shadow-xs text-center space-y-4 my-12 max-w-xl mx-auto">
-              <div className="w-10 h-10 bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto">
+            <div className="bg-white border border-slate-200 p-8 shadow-xs text-center space-y-4 my-12 max-w-xl mx-auto rounded-2xl">
+              <div className="w-10 h-10 bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto rounded-xl">
                 <Layers className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900 uppercase font-mono tracking-wider">
-                  Module Ready For Next Phase
+                  View Unavailable
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  You are viewing the roadmap anchor for <strong>{activeTab.toUpperCase()}</strong>.
-                  This module connects in subsequent phases with full on-prem pipeline integration.
+                  The selected view is not recognized. Please return to the investigation overview.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveTab('overview')}
-                className="px-4 py-2 bg-slate-900 text-white text-xs font-mono uppercase tracking-wider font-semibold apple-press inline-flex items-center gap-2"
+                className="px-4 py-2 bg-slate-900 text-white text-xs font-mono uppercase tracking-wider font-semibold apple-press inline-flex items-center gap-2 rounded-xl"
               >
                 Return to Overview & KPIs <ArrowRight className="w-3.5 h-3.5" />
               </button>

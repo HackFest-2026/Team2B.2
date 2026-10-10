@@ -14,7 +14,9 @@ import {
   AlertCircle,
   Eye,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Plus,
+  X
 } from 'lucide-react';
 
 export default function IngestionView({ currentUser, simulatedClearance }) {
@@ -26,8 +28,46 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [activeChunkTab, setActiveChunkTab] = useState('ALL');
+  const [showNewCaseModal, setShowNewCaseModal] = useState(false);
+  const [newCaseId, setNewCaseId] = useState('');
+  const [newCaseTitle, setNewCaseTitle] = useState('');
+  const [isCreatingCase, setIsCreatingCase] = useState(false);
 
   const token = localStorage.getItem('verion_token');
+
+  const handleCreateCase = async (e) => {
+    e.preventDefault();
+    if (!newCaseId || !newCaseTitle) return;
+    setIsCreatingCase(true);
+    setStatusMsg('');
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/case/new', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          case_id: newCaseId,
+          title: newCaseTitle
+        })
+      });
+      if (res.ok) {
+        setStatusMsg(`Initialized new investigation case: ${newCaseId}. Ready for evidence ingestion.`);
+        setShowNewCaseModal(false);
+        setNewCaseId('');
+        setNewCaseTitle('');
+        await fetchManifestAndChunks();
+      } else {
+        const err = await res.json();
+        setStatusMsg(`Case Creation Failed: ${err.detail || 'Unauthorized'}`);
+      }
+    } catch (err) {
+      setStatusMsg(`Case Creation Error: ${err.message}`);
+    } finally {
+      setIsCreatingCase(false);
+    }
+  };
 
   const fetchManifestAndChunks = async () => {
     try {
@@ -136,11 +176,21 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {currentUser?.can_upload && (
+            <button
+              type="button"
+              onClick={() => setShowNewCaseModal(true)}
+              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono font-bold transition-colors apple-press flex items-center gap-1.5 cursor-pointer shadow-xs rounded-xl"
+            >
+              <Plus className="w-3.5 h-3.5" /> Initialize New Case
+            </button>
+          )}
+
           <button
             type="button"
             onClick={fetchManifestAndChunks}
             disabled={isRefreshing}
-            className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-400 text-xs font-mono font-semibold text-slate-700 transition-colors apple-press flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-400 text-xs font-mono font-semibold text-slate-700 transition-colors apple-press flex items-center gap-1.5 cursor-pointer rounded-xl"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} /> Refresh Registry
           </button>
@@ -149,9 +199,9 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
             type="button"
             onClick={handleBenchmarkIngest}
             disabled={isRefreshing}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-semibold transition-colors apple-press flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-semibold transition-colors apple-press flex items-center gap-1.5 cursor-pointer shadow-xs rounded-xl"
           >
-            <Layers className="w-3.5 h-3.5" /> Re-Ingest Benchmark Case
+            <Layers className="w-3.5 h-3.5" /> Re-Ingest Benchmark
           </button>
         </div>
       </div>
@@ -437,6 +487,83 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
           ))}
         </div>
       </div>
+
+      {/* Initialize New Case Modal */}
+      {showNewCaseModal && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setShowNewCaseModal(false)}
+          />
+
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-blue-600" />
+                Initialize New Case Container
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowNewCaseModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCase} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono uppercase text-slate-500 font-semibold mb-1">
+                  Case Identifier (ID)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. CASE-2026-BETA or IR-2026-1044"
+                  value={newCaseId}
+                  onChange={(e) => setNewCaseId(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 bg-slate-50/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-mono uppercase text-slate-500 font-semibold mb-1">
+                  Investigation Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Cloud Gateway SSH Compromise"
+                  value={newCaseTitle}
+                  onChange={(e) => setNewCaseTitle(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 bg-slate-50/50"
+                />
+              </div>
+
+              <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-xs text-blue-900 leading-relaxed">
+                <strong>Access Control Policy:</strong> Creating a new case resets the active evidence ledger. Only Lead Officers have write privileges. Once initialized, investigators and auditors gain read access governed strictly by their clearance level.
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewCaseModal(false)}
+                  className="px-4 py-2 border border-slate-200 text-xs font-mono font-semibold rounded-xl hover:bg-slate-50 apple-press"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingCase}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-bold rounded-xl apple-press disabled:opacity-50"
+                >
+                  {isCreatingCase ? 'Initializing...' : 'Create Case'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

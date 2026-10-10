@@ -126,7 +126,27 @@ def list_benchmark_files(user: Dict[str, Any] = Depends(get_current_user)):
         "files": files
     }
 
-# ----------------- Phase 2 Ingestion Endpoints -----------------
+# ----------------- Evidence Ingestion & Case Management -----------------
+class CreateCaseRequest(BaseModel):
+    case_id: str
+    title: str
+
+@app.post("/api/case/new")
+def create_new_case_endpoint(
+    data: CreateCaseRequest,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Initializes a new investigation case.
+    Strictly restricted to users with can_upload (Evidence Custodian & Lead Officer).
+    """
+    if not user.get("can_upload", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only Evidence Custodian & Lead Officer can initialize new investigation cases."
+        )
+    return manifest_store.create_new_case(data.case_id, data.title, created_by=user["username"])
+
 @app.post("/api/ingest/benchmark")
 def ingest_benchmark_dataset(user: Dict[str, Any] = Depends(get_current_user)):
     """Manually trigger or reset the benchmark dataset ingestion."""

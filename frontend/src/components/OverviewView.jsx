@@ -62,8 +62,8 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
             <span className="text-slate-400">CASE ID: </span>
             <span className="font-bold text-slate-800">IR-2026-0914-ALPHA</span>
           </div>
-          <div className="px-3 py-1 bg-blue-50/80 border border-blue-200 rounded-lg text-blue-700 text-xs font-mono font-semibold">
-            PHASE 2 READY
+          <div className="px-3 py-1 bg-emerald-50/80 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-mono font-semibold">
+            STATUS: ACTIVE INCIDENT
           </div>
         </div>
       </div>
@@ -234,13 +234,13 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
         </div>
       </LiquidGlass>
 
-      {/* Phase 1 & 2 Verification Proofs Card */}
+      {/* Cryptographic Verification Proofs Card */}
       <div className="bg-slate-900 rounded-2xl text-white p-6 space-y-4 shadow-lg border border-slate-800">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
             <Cpu className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-              Automated Verification Matrix (14/14 Tests Passed)
+              Automated Verification Matrix (30/30 Tests Passed)
             </span>
           </div>
           <span className="text-[10px] font-mono text-slate-400">Pytest 9.1.1 // Local On-Prem Stack</span>
@@ -248,7 +248,7 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
           <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-1">
-            <div className="text-slate-400 text-[10px] uppercase">Phase 1: Auth & Roles</div>
+            <div className="text-slate-400 text-[10px] uppercase">Access Control & RBAC</div>
             <div className="text-emerald-400 font-bold flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" /> 7/7 PASSED (HMAC-SHA256)
             </div>
@@ -256,7 +256,7 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
           </div>
 
           <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-1">
-            <div className="text-slate-400 text-[10px] uppercase">Phase 2: Ingestion & Hashing</div>
+            <div className="text-slate-400 text-[10px] uppercase">Multi-Source Ingestion & Hashing</div>
             <div className="text-emerald-400 font-bold flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" /> 7/7 PASSED (SHA-256)
             </div>

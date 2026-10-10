@@ -11,12 +11,12 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { id: 'overview', label: 'Overview & KPIs', icon: LayoutDashboard, phase: 'Phase 1' },
-  { id: 'ingestion', label: 'Evidence Ingestion', icon: UploadCloud, phase: 'Phase 2' },
-  { id: 'workspace', label: 'Investigation Workspace', icon: Layers, phase: 'Phase 3' },
-  { id: 'conflicts', label: 'Conflict Radar', icon: AlertTriangle, phase: 'Phase 3' },
-  { id: 'dossier', label: 'Synthesized Dossier', icon: FileCheck2, phase: 'Phase 4' },
-  { id: 'audit', label: 'Audit & Provenance', icon: Fingerprint, phase: 'Phase 5' }
+  { id: 'overview', label: 'Overview & KPIs', icon: LayoutDashboard },
+  { id: 'ingestion', label: 'Evidence Ingestion', icon: UploadCloud },
+  { id: 'workspace', label: 'Investigation Workspace', icon: Layers },
+  { id: 'conflicts', label: 'Conflict Radar', icon: AlertTriangle },
+  { id: 'dossier', label: 'Synthesized Dossier', icon: FileCheck2 },
+  { id: 'audit', label: 'Audit & Provenance', icon: Fingerprint }
 ];
 
 export default function Sidebar({ activeTab, setActiveTab, currentUser }) {
@@ -47,15 +47,9 @@ export default function Sidebar({ activeTab, setActiveTab, currentUser }) {
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                     <span>{item.label}</span>
                   </div>
-                  <span
-                    className={`text-[9px] font-mono px-2 py-0.5 rounded-md border ${
-                      isActive
-                        ? 'border-blue-400 bg-blue-500/50 text-white'
-                        : 'border-slate-200/80 text-slate-400 bg-white/60'
-                    }`}
-                  >
-                    {item.phase}
-                  </span>
+                  {isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
+                  )}
                 </button>
               );
             })}

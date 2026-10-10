@@ -9,8 +9,30 @@ from backend.ingestion.chunker import process_file_into_chunks
 
 class IngestionManifestStore:
     def __init__(self):
+        self.case_id: str = "IR-2026-0914-ALPHA"
+        self.case_title: str = "Unauthorized Relational Cluster Exfiltration"
         self.files: Dict[str, Dict[str, Any]] = {}
         self.all_chunks: List[Dict[str, Any]] = []
+
+    def create_new_case(
+        self,
+        case_id: str,
+        title: str,
+        created_by: str = "officer_lead"
+    ) -> Dict[str, Any]:
+        """Initializes a fresh case container and resets evidence ledger."""
+        self.case_id = case_id
+        self.case_title = title
+        self.files.clear()
+        self.all_chunks.clear()
+        return {
+            "status": "success",
+            "case_id": self.case_id,
+            "title": self.case_title,
+            "created_by": created_by,
+            "files_count": 0,
+            "chunks_count": 0
+        }
 
     def ingest_file(
         self,
@@ -39,6 +61,8 @@ class IngestionManifestStore:
     def get_manifest_summary(self) -> Dict[str, Any]:
         """Returns high-level statistics for the ingestion hub."""
         return {
+            "case_id": getattr(self, "case_id", "IR-2026-0914-ALPHA"),
+            "case_title": getattr(self, "case_title", "Unauthorized Relational Cluster Exfiltration"),
             "total_files": len(self.files),
             "total_chunks": len(self.all_chunks),
             "files": list(self.files.values()),

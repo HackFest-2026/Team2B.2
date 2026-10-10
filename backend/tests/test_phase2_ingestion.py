@@ -126,3 +126,24 @@ def test_upload_role_authorization_enforced():
     )
     assert good_upload.status_code == 200
     assert good_upload.json()["status"] == "success"
+
+def test_create_new_case_authorization():
+    """Verify that only Lead Officer can initialize a new case, while others are rejected."""
+    # Auditor cannot create a new case (403 Forbidden)
+    auditor_headers = get_auth_header("auditor_l1")
+    bad_res = client.post(
+        "/api/case/new",
+        json={"case_id": "CASE-TEST-001", "title": "Unauthorized Test Case"},
+        headers=auditor_headers
+    )
+    assert bad_res.status_code == 403
+
+    # Officer can create a new case (200 OK)
+    officer_headers = get_auth_header("officer_lead")
+    ok_res = client.post(
+        "/api/case/new",
+        json={"case_id": "CASE-TEST-001", "title": "Authorized Investigation"},
+        headers=officer_headers
+    )
+    assert ok_res.status_code == 200
+    assert ok_res.json()["case_id"] == "CASE-TEST-001"
