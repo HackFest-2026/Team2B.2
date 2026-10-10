@@ -59,7 +59,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen ambient-mesh flex flex-col font-sans">
       {/* Top Persistent Header */}
       <Header
         currentUser={currentUser}
