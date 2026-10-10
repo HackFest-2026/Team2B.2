@@ -6,6 +6,7 @@ import OverviewView from './components/OverviewView';
 import IngestionView from './components/IngestionView';
 import WorkspaceView from './components/WorkspaceView';
 import ConflictRadarView from './components/ConflictRadarView';
+import DossierView from './components/DossierView';
 import { Layers, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export default function App() {
@@ -107,7 +108,14 @@ export default function App() {
             />
           )}
 
-          {!['overview', 'ingestion', 'workspace', 'conflicts'].includes(activeTab) && (
+          {activeTab === 'dossier' && (
+            <DossierView
+              currentUser={currentUser}
+              simulatedClearance={simulatedClearance}
+            />
+          )}
+
+          {!['overview', 'ingestion', 'workspace', 'conflicts', 'dossier'].includes(activeTab) && (
             <div className="bg-white border border-slate-200 p-8 shadow-xs text-center space-y-4 my-12 max-w-xl mx-auto">
               <div className="w-10 h-10 bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto">
                 <Layers className="w-5 h-5" />

@@ -291,6 +291,26 @@ def trigger_analysis(
         "conflicts": conflicts
     }
 
+# ----------------- Phase 4 Single Verifiable Document / Dossier -----------------
+from backend.ai.synthesizer import synthesize_dossier
+
+@app.get("/api/analysis/dossier")
+def get_synthesized_dossier(
+    simulate_clearance: Optional[str] = Query(None),
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Returns the comprehensive Single Verifiable Document with interactive citation anchors.
+    Dynamically redacts restricted chunks for LEVEL_1 clearance to guarantee zero data spillage.
+    """
+    effective_clearance = user["clearance"]
+    if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
+        effective_clearance = CLEARANCE_LEVEL_1
+
+    chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance)
+    return dossier
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

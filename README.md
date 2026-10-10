@@ -186,6 +186,80 @@ backend/tests/test_phase3_intelligence.py::test_analysis_run_api_endpoint PASSED
 
 ---
 
+### 📦 Phase 4: Single Verifiable Document / Synthesized Dossier & Interactive Citation Anchors
+* **Status:** ✅ **COMPLETED & TEST VERIFIED**
+* **Tools & Stack Used:**
+  * **Synthesis Engine:** Grounded Narrative Synthesizer (`backend/ai/synthesizer.py`), Cryptographic SHA-256 Hashing, Zero-Spillage Dynamic Masking
+  * **API Endpoints:** FastAPI `GET /api/analysis/dossier` with optional `simulate_clearance` parameter
+  * **Frontend UI:** `DossierView.jsx`, Apple Design Principles (publication typography, slide-over evidence inspector sheet, tactile interactive citation pills, 1-click hash copy, Liquid Glass cards)
+  * **Automated Tests:** `backend/tests/test_phase4_dossier.py` (5 comprehensive tests, total test count: 25)
+
+#### What We Built in Phase 4:
+1. **Single Verifiable Document Synthesizer (`backend/ai/synthesizer.py`):**
+   * Reconciles all 3 heterogeneous sources into one unified forensic incident narrative across 4 key sections:
+     * **1. Executive Summary & Incident Overview:** Anomaly detection, witness departure claim, and confirmed machine persistence.
+     * **2. Chronological Play-by-Play Reconstruction:** Strict timestamped sequence of events with interactive evidence anchors.
+     * **3. Reconciled Contradiction Analysis:** Explaining the core divergence between claimed 21:00 UTC logoff and deterministic machine logs at 21:14 UTC.
+     * **4. Technical Forensic Assessment & Actionable Remediation:** Mandatory key rotations, network isolation, and FIDO2 MFA enforcement.
+   * Calculates a tamper-evident **Master Dossier SHA-256 Seal** across all sections.
+2. **Interactive Cryptographic Citation Anchors:**
+   * Every factual claim in the narrative is embedded with citation pills (`[Ref 01]` through `[Ref 08]`).
+   * Each citation links mathematically to:
+     * Source document name & source type (`PDF`, `TRANSCRIPT`, `SYSLOG`).
+     * Exact locator (`Page 1, Paragraph 1`, `Line 42`, etc.).
+     * Originating speaker / author / system daemon.
+     * Raw text excerpt from the ingested chunk.
+     * Verified 64-character SHA-256 hash stamp.
+     * Clearance classification level (`LEVEL_1` or `LEVEL_2`).
+3. **Zero Data Spillage RBAC Enforcement (Security Rule 2):**
+   * When queried under `LEVEL_1` (Public Compliance Auditor), internal IP addresses (`10.240.1.45`) and classified database queries are dynamically redacted to `[REDACTED - LEVEL 2]` across the narrative and citation excerpts.
+   * When queried under `LEVEL_2` (Investigator / Lead Officer), full technical evidence is unmasked.
+4. **Apple-Design Dossier Interface (`frontend/src/components/DossierView.jsx`):**
+   * Publication-grade typographical layout with subtle Liquid Glass materials and hairline framing.
+   * **Slide-over Evidence Inspector Sheet:** Clicking any `[Ref XX]` pill smoothly transitions an inspector sheet from the right, displaying raw source excerpts, 1-click SHA-256 copy, and cryptographic ledger verification status.
+   * Action toolbar with "Verify Hashes" and "Copy Dossier" features.
+   * Comprehensive Cryptographic Citation Ledger table at the bottom of the dossier.
+
+#### Phase 4 Verification Test Suite (`Test-4`):
+Validated via `python -m pytest backend/tests/test_phase4_dossier.py -v`:
+
+```bash
+$ python -m pytest backend/tests/ -v
+============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+collected 25 items
+
+backend/tests/test_phase1_auth.py::test_health_endpoint PASSED           [  4%]
+backend/tests/test_phase1_auth.py::test_login_officer_lead PASSED        [  8%]
+backend/tests/test_phase1_auth.py::test_login_investigator_l2 PASSED     [ 12%]
+backend/tests/test_phase1_auth.py::test_login_auditor_l1 PASSED          [ 16%]
+backend/tests/test_phase1_auth.py::test_login_invalid_credentials PASSED [ 20%]
+backend/tests/test_phase1_auth.py::test_auth_me_with_valid_and_invalid_tokens PASSED [ 24%]
+backend/tests/test_phase1_auth.py::test_benchmark_files_existence_and_integrity PASSED [ 28%]
+backend/tests/test_phase2_ingestion.py::test_pdf_parser_extraction PASSED [ 32%]
+backend/tests/test_phase2_ingestion.py::test_log_parser_extraction PASSED [ 36%]
+backend/tests/test_phase2_ingestion.py::test_transcript_parser_extraction PASSED [ 40%]
+backend/tests/test_phase2_ingestion.py::test_sha256_cryptographic_fingerprinting PASSED [ 44%]
+backend/tests/test_phase2_ingestion.py::test_pre_retrieval_clearance_zero_spillage PASSED [ 48%]
+backend/tests/test_phase2_ingestion.py::test_level2_investigator_receives_all_chunks PASSED [ 52%]
+backend/tests/test_phase2_ingestion.py::test_upload_role_authorization_enforced PASSED [ 56%]
+backend/tests/test_phase3_intelligence.py::test_entity_extraction_resolution PASSED [ 60%]
+backend/tests/test_phase3_intelligence.py::test_unified_timeline_chronology PASSED [ 64%]
+backend/tests/test_phase3_intelligence.py::test_conflict_radar_detection PASSED [ 68%]
+backend/tests/test_phase3_intelligence.py::test_conflict_provenance_cryptographic_anchors PASSED [ 72%]
+backend/tests/test_phase3_intelligence.py::test_zero_spillage_on_conflicts_and_entities PASSED [ 76%]
+backend/tests/test_phase3_intelligence.py::test_analysis_run_api_endpoint PASSED [ 80%]
+backend/tests/test_phase4_dossier.py::test_dossier_structure_and_sections PASSED [ 84%]
+backend/tests/test_phase4_dossier.py::test_citations_cryptographic_integrity PASSED [ 88%]
+backend/tests/test_phase4_dossier.py::test_zero_data_spillage_clearance_gating PASSED [ 92%]
+backend/tests/test_phase4_dossier.py::test_dossier_sha256_tamper_evidence PASSED [ 96%]
+backend/tests/test_phase4_dossier.py::test_api_dossier_endpoints PASSED  [100%]
+
+======================= 25 passed in 0.63s ========================
+```
+
+---
+
 ## 🛠️ How to Run Locally
 
 ### 1. Backend (FastAPI)
@@ -210,5 +284,4 @@ python -m pytest backend/tests/ -v
 ---
 
 ## 🗺️ Next Steps
-* **Phase 4:** Synthesized Dossier with Interactive Clickable Citation Anchors & Slide-Over Evidence Inspector.
 * **Phase 5:** Verified Cryptographic PDF Report Export & Live Benchmark KPI Evaluation Screen.
