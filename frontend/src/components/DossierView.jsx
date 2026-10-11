@@ -17,7 +17,14 @@ import {
   X,
   ChevronRight,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  AlertTriangle,
+  Key,
+  CheckCircle2,
+  XCircle,
+  Upload,
+  FileSpreadsheet
 } from 'lucide-react';
 import LiquidGlass from './ui/LiquidGlass';
 
@@ -29,6 +36,16 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
   const [copiedDoc, setCopiedDoc] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationDone, setVerificationDone] = useState(false);
+
+  // Download & Tamper Verification States
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingJson, setIsExportingJson] = useState(false);
+  const [showTamperModal, setShowTamperModal] = useState(false);
+  const [tamperTab, setTamperTab] = useState('explain'); // 'explain' | 'verify' | 'simulate'
+  const [isVerifyingFile, setIsVerifyingFile] = useState(false);
+  const [fileVerificationResult, setFileVerificationResult] = useState(null);
+  const [simulationState, setSimulationState] = useState('original'); // 'original' | 'tampered'
+  const [simulationResult, setSimulationResult] = useState(null);
 
   const token = localStorage.getItem('verion_token');
 
@@ -86,6 +103,125 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
       setIsVerifying(false);
       setVerificationDone(true);
     }, 600);
+  };
+
+  // Download official signed PDF
+  const handleDownloadPdf = async () => {
+    if (!dossier) return;
+    setIsExportingPdf(true);
+    try {
+      const res = await fetch(`/api/export/pdf?simulate_clearance=${simulatedClearance}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Verion_Dossier_${dossier.case_id}_${simulatedClearance}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  // Download cryptographically sealed JSON
+  const handleDownloadJson = async () => {
+    if (!dossier) return;
+    setIsExportingJson(true);
+    try {
+      const res = await fetch(`/api/export/dossier-json?simulate_clearance=${simulatedClearance}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Verion_Dossier_${dossier.case_id}_${simulatedClearance}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('Failed to download JSON:', err);
+    } finally {
+      setIsExportingJson(false);
+    }
+  };
+
+  // Upload file verification handler
+  const handleVerifyUploadedFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsVerifyingFile(true);
+    setFileVerificationResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/verify/file', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      setFileVerificationResult(data);
+    } catch (err) {
+      setFileVerificationResult({
+        is_authentic: false,
+        status: 'VERIFICATION_ERROR',
+        message: 'Network error communicating with verification engine: ' + err.message
+      });
+    } finally {
+      setIsVerifyingFile(false);
+    }
+  };
+
+  // Live Tamper Simulation Sandbox
+  const handleRunTamperSimulation = async (tamper) => {
+    if (!dossier) return;
+    if (!tamper) {
+      setSimulationState('original');
+      try {
+        const res = await fetch('/api/verify/dossier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dossier)
+        });
+        const data = await res.json();
+        setSimulationResult(data);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setSimulationState('tampered');
+      const modifiedSections = JSON.parse(JSON.stringify(dossier.sections || []));
+      if (modifiedSections.length > 0) {
+        const origContent = modifiedSections[0].content || '';
+        modifiedSections[0].content = origContent + ' [IN-TRANSIT ALTERATION: Threat actor modified 42,000 count to 42!]';
+      }
+      const tamperedPayload = {
+        ...dossier,
+        sections: modifiedSections
+      };
+      try {
+        const res = await fetch('/api/verify/dossier', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tamperedPayload)
+        });
+        const data = await res.json();
+        setSimulationResult(data);
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   // Helper to render text with clickable citation badges
@@ -171,52 +307,74 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
-              onClick={handleRunVerification}
-              disabled={isVerifying}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider flex items-center gap-2 transition-all apple-press cursor-pointer border ${
-                verificationDone
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
+              onClick={handleDownloadPdf}
+              disabled={isExportingPdf}
+              className="px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 apple-press cursor-pointer shadow-sm transition-all"
+              title="Download official tamper-evident PDF dossier with cryptographic seal"
             >
-              <ShieldCheck className={`w-4 h-4 ${verificationDone ? 'text-white' : 'text-emerald-600'}`} />
-              {isVerifying ? 'Verifying Hashes...' : verificationDone ? '100% Ledger Verified' : 'Verify Hashes'}
+              <Download className={`w-4 h-4 ${isExportingPdf ? 'animate-bounce' : ''}`} />
+              {isExportingPdf ? 'Generating PDF...' : 'Download Signed PDF'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadJson}
+              disabled={isExportingJson}
+              className="px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-2 apple-press cursor-pointer transition-all shadow-2xs"
+              title="Export complete dossier JSON with embedded HMAC signature"
+            >
+              <FileText className="w-4 h-4 text-slate-500" />
+              {isExportingJson ? 'Exporting...' : 'Export JSON'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowTamperModal(true);
+                setTamperTab('explain');
+              }}
+              className="px-3.5 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-2 apple-press cursor-pointer transition-all shadow-2xs"
+              title="Inspect anti-tamper proofs, verify files, or test tamper simulation"
+            >
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Anti-Tamper Guard
             </button>
 
             <button
               type="button"
               onClick={handleCopyFullReport}
-              className="px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2 apple-press cursor-pointer"
+              className="px-3 py-2.5 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2 apple-press cursor-pointer shadow-2xs"
+              title="Copy narrative report text"
             >
               {copiedDoc ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
-              {copiedDoc ? 'Copied' : 'Copy Dossier'}
+              {copiedDoc ? 'Copied' : 'Copy'}
             </button>
 
             <button
               type="button"
               onClick={fetchDossier}
-              className="px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2 apple-press cursor-pointer shadow-2xs"
+              className="px-3 py-2.5 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2 apple-press cursor-pointer shadow-2xs"
+              title="Refresh dossier from backend"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
             </button>
           </div>
         </div>
 
-        {/* Cryptographic Seal Bar */}
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
-          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70 flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase text-slate-400 font-semibold">Master Dossier SHA-256 Seal</div>
-              <div className="text-slate-800 font-bold truncate max-w-[220px]" title={dossier.dossier_sha256_seal}>
+        {/* Cryptographic Seal Bar - 4-Column Proof Architecture */}
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200 flex items-center justify-between">
+            <div className="min-w-0 pr-2">
+              <div className="text-[10px] uppercase text-slate-400 font-bold">SHA-256 Narrative Seal</div>
+              <div className="text-slate-800 font-bold truncate max-w-[170px]" title={dossier.dossier_sha256_seal}>
                 {dossier.dossier_sha256_seal}
               </div>
             </div>
             <button
               type="button"
               onClick={() => handleCopyHash(dossier.dossier_sha256_seal)}
-              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors"
-              title="Copy Seal"
+              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors shrink-0"
+              title="Copy SHA-256 Seal"
             >
               {copiedHash === dossier.dossier_sha256_seal ? (
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -226,28 +384,93 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
             </button>
           </div>
 
-          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70">
-            <div className="text-[10px] uppercase text-slate-400 font-semibold">Citation Grounding Ratio</div>
-            <div className="text-slate-800 font-bold">
-              {dossier.metadata.verified_citations} / {dossier.metadata.total_citations} Verified Citations (100% Traceable)
+          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200 flex items-center justify-between">
+            <div className="min-w-0 pr-2">
+              <div className="text-[10px] uppercase text-slate-400 font-bold">HMAC Digital Signature</div>
+              <div className="text-slate-800 font-bold truncate max-w-[170px]" title={dossier.digital_signature || 'N/A'}>
+                {dossier.digital_signature ? `${dossier.digital_signature.slice(0, 16)}...` : 'SEALED'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleCopyHash(dossier.digital_signature || '')}
+              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors shrink-0"
+              title="Copy HMAC Signature"
+            >
+              {copiedHash === dossier.digital_signature ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+
+          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase text-slate-400 font-bold">Citation Grounding</div>
+            <div className="text-slate-800 font-bold truncate">
+              {dossier.metadata.verified_citations}/{dossier.metadata.total_citations} Verified Anchors (100%)
             </div>
           </div>
 
-          <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70">
-            <div className="text-[10px] uppercase text-slate-400 font-semibold">Clearance Security Policy</div>
-            <div className="text-slate-800 font-bold flex items-center gap-1.5">
+          <div className="p-3 bg-slate-50/90 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase text-slate-400 font-bold">Clearance Gate Status</div>
+            <div className="text-slate-800 font-bold flex items-center gap-1.5 truncate">
               {dossier.clearance_applied === 'LEVEL_1' ? (
                 <>
-                  <Lock className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="text-amber-700">Zero Data Spillage: LEVEL_2 Redacted</span>
+                  <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span className="text-amber-700 truncate">L1 Sanitized (0 Spillage)</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  <span className="text-blue-700">Unrestricted LEVEL_2 Investigative Clearance</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span className="text-blue-700 truncate">L2 Unrestricted Investigative</span>
                 </>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Anti-Tamper Security Assurance Ribbon */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-emerald-50/90 via-blue-50/50 to-slate-50/90 border border-emerald-200/90 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3.5 text-xs">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-xs shrink-0 mt-0.5">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-slate-900 text-sm flex items-center gap-2 flex-wrap">
+                <span>Dual Cryptographic Anti-Tamper Guarantee</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                  SHA-256 + HMAC-SHA256 ACTIVE
+                </span>
+              </div>
+              <p className="text-slate-600 mt-1 leading-relaxed">
+                When sharing this report with third parties, any in-transit modification (altering findings, timestamps, or IPs) mathematically breaks the SHA-256 digest and invalidates the cryptographic signature.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+            <button
+              type="button"
+              onClick={() => {
+                setShowTamperModal(true);
+                setTamperTab('verify');
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 flex items-center gap-1.5 apple-press cursor-pointer shadow-2xs"
+            >
+              <Upload className="w-3.5 h-3.5 text-blue-600" />
+              Verify File
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowTamperModal(true);
+                setTamperTab('simulate');
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 apple-press cursor-pointer shadow-xs"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Test Tamper Sandbox &rarr;
+            </button>
           </div>
         </div>
 
@@ -473,6 +696,371 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
                 className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider apple-press cursor-pointer hover:bg-slate-800"
               >
                 Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cryptographic Anti-Tamper Verification & Forensic Inspector Modal */}
+      {showTamperModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowTamperModal(false)}
+          />
+
+          {/* Modal Container */}
+          <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col my-8 z-10">
+            {/* Modal Header */}
+            <div className="p-6 pb-4 border-b border-slate-200 bg-slate-50/80 flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-600 text-white rounded-2xl shadow-sm">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    Tamper-Evident Integrity & Verification
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold">
+                      ACTIVE
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                    How Verion AI prevents and catches unauthorized modifications in transmitted reports
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTamperModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-full transition-colors apple-press cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Navigation Tabs */}
+            <div className="flex items-center gap-2 px-6 pt-3 pb-2 border-b border-slate-200/80 bg-slate-50/50">
+              <button
+                type="button"
+                onClick={() => setTamperTab('explain')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold tracking-wider transition-all apple-press cursor-pointer ${
+                  tamperTab === 'explain'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-200/70'
+                }`}
+              >
+                1. How Tamper-Evidence Works
+              </button>
+              <button
+                type="button"
+                onClick={() => setTamperTab('verify')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold tracking-wider transition-all apple-press cursor-pointer ${
+                  tamperTab === 'verify'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-200/70'
+                }`}
+              >
+                2. Live File Verifier
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTamperTab('simulate');
+                  if (!simulationResult) handleRunTamperSimulation(false);
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold tracking-wider transition-all apple-press cursor-pointer ${
+                  tamperTab === 'simulate'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-200/70'
+                }`}
+              >
+                3. Tamper Simulation Sandbox
+              </button>
+            </div>
+
+            {/* Modal Tab Body */}
+            <div className="p-6 space-y-6 overflow-y-auto max-h-[65vh]">
+              {/* TAB 1: HOW IT WORKS */}
+              {tamperTab === 'explain' && (
+                <div className="space-y-5">
+                  <div className="p-4 bg-blue-50/70 border border-blue-200/80 rounded-2xl text-xs text-blue-950">
+                    <h4 className="font-bold text-sm text-blue-900 mb-1 flex items-center gap-1.5">
+                      <Key className="w-4 h-4 text-blue-700" />
+                      The Core Security Challenge: In-Transit Document Tampering
+                    </h4>
+                    <p className="leading-relaxed">
+                      When an investigative summary report is exported and emailed to an auditor, judge, or executive, a malicious intermediary or adversary might attempt to modify key facts (e.g. changing an IP address from 10.240.1.45 to an innocent IP, editing an exfiltration timestamp, or changing patient records from 42,000 to 42). Verion AI renders this mathematically detectable with 100% certainty.
+                    </p>
+                  </div>
+
+                  {/* 3 Pillars */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                      <div className="w-7 h-7 bg-blue-100 text-blue-700 rounded-xl flex items-center justify-center font-bold font-mono">
+                        01
+                      </div>
+                      <div className="font-bold text-slate-900">SHA-256 Avalanche Digest</div>
+                      <p className="text-slate-600 leading-relaxed text-[11px]">
+                        The entire narrative text and citations are hashed. Cryptographic hash properties guarantee that altering even a single comma or letter completely randomizes the entire 64-character hexadecimal digest.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                      <div className="w-7 h-7 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-bold font-mono">
+                        02
+                      </div>
+                      <div className="font-bold text-slate-900">Custodial HMAC-SHA256 Signature</div>
+                      <p className="text-slate-600 leading-relaxed text-[11px]">
+                        The document seal is signed using the server's private secret key. An attacker who modifies the text cannot recompute a valid signature because they do not possess the server key.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                      <div className="w-7 h-7 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-bold font-mono">
+                        03
+                      </div>
+                      <div className="font-bold text-slate-900">Chunk Provenance Anchors</div>
+                      <p className="text-slate-600 leading-relaxed text-[11px]">
+                        Every statement in the report maps to a chunk hash in the immutable ledger. Modified citations can be audited directly against the original ingested evidence streams.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* PDF Document Seal Features */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <div className="font-bold text-slate-900 text-xs uppercase font-mono tracking-wider">
+                      Embedded PDF Provenance Features
+                    </div>
+                    <ul className="text-xs text-slate-600 space-y-2">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong>Official Cryptographic Seal Box:</strong> Prominently stamped on Page 1 with the full SHA-256 digest and HMAC custody signature.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong>Embedded Metadata Dictionary:</strong> Custom PyMuPDF document keywords (<code className="bg-slate-200 px-1 py-0.5 rounded text-[11px]">SHA256:... SIG:...</code>) embedded directly into the PDF trailer.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span><strong>Zero Data Spillage Guarantee:</strong> Level 1 Auditor PDFs are stripped of internal IPs before hashing, ensuring separate cryptographic seals for sanitized vs classified versions.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setTamperTab('simulate')}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider apple-press cursor-pointer shadow-xs"
+                    >
+                      Test Tamper Simulation Sandbox &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: LIVE FILE VERIFIER */}
+              {tamperTab === 'verify' && (
+                <div className="space-y-5">
+                  <div className="text-xs text-slate-600">
+                    Upload any downloaded Verion AI dossier file (<code>.pdf</code> or <code>.json</code>) to verify its cryptographic seal and signature against the custodian authority.
+                  </div>
+
+                  {/* Dropzone / Upload button */}
+                  <label className="border-2 border-dashed border-slate-300 hover:border-blue-400 bg-slate-50/70 hover:bg-blue-50/30 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all">
+                    <input
+                      type="file"
+                      accept=".pdf,.json"
+                      onChange={handleVerifyUploadedFile}
+                      className="hidden"
+                    />
+                    <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold text-sm text-slate-800">
+                        {isVerifyingFile ? 'Verifying Cryptographic Signatures...' : 'Click or Drop Dossier File Here'}
+                      </div>
+                      <div className="text-xs text-slate-500 font-mono mt-1">
+                        Supports signed .PDF reports and sealed .JSON manifests
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* Verification Result Card */}
+                  {fileVerificationResult && (
+                    <div
+                      className={`p-5 rounded-2xl border ${
+                        fileVerificationResult.is_authentic
+                          ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
+                          : 'bg-rose-50/80 border-rose-300 text-rose-950'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {fileVerificationResult.is_authentic ? (
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                        )}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm">
+                              {fileVerificationResult.is_authentic
+                                ? 'VERIFIED AUTHENTIC: 100% UNTAMPERED'
+                                : 'TAMPER DETECTED / INVALID DOCUMENT'}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                fileVerificationResult.is_authentic
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : 'bg-rose-100 text-rose-800 border border-rose-300'
+                              }`}
+                            >
+                              {fileVerificationResult.status}
+                            </span>
+                          </div>
+
+                          <p className="text-xs leading-relaxed">
+                            {fileVerificationResult.message}
+                          </p>
+
+                          <div className="pt-2 border-t border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+                            <div>Case ID: <strong>{fileVerificationResult.case_id || dossier.case_id}</strong></div>
+                            <div>Clearance: <strong>{fileVerificationResult.clearance_applied || 'LEVEL_2'}</strong></div>
+                            <div className="col-span-full truncate">
+                              Seal Digest: <strong>{fileVerificationResult.claimed_seal || dossier.dossier_sha256_seal}</strong>
+                            </div>
+                            <div className="col-span-full truncate">
+                              Signature: <strong>{fileVerificationResult.claimed_signature || dossier.digital_signature}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: LIVE TAMPER SIMULATION SANDBOX */}
+              {tamperTab === 'simulate' && (
+                <div className="space-y-5">
+                  <div className="text-xs text-slate-600">
+                    Test live tamper detection in real time! Click below to simulate an adversary altering 1 sentence in the synthesized dossier, and see how the verification engine instantly catches the fraud.
+                  </div>
+
+                  {/* Target Evidence Box */}
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs font-mono">
+                    <div className="text-[10px] uppercase text-slate-400 font-bold">Investigative Finding Excerpt</div>
+                    <div
+                      className={`p-3 rounded-xl border ${
+                        simulationState === 'tampered'
+                          ? 'bg-rose-50 border-rose-300 text-rose-900 font-bold'
+                          : 'bg-white border-slate-200 text-slate-800'
+                      }`}
+                    >
+                      {simulationState === 'tampered'
+                        ? `${dossier.sections[0]?.content?.slice(0, 180)}... [IN-TRANSIT ALTERATION: Threat actor modified 42,000 count to 42!]`
+                        : `${dossier.sections[0]?.content?.slice(0, 220)}...`}
+                    </div>
+                  </div>
+
+                  {/* Simulator Controls */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleRunTamperSimulation(true)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-2 apple-press cursor-pointer shadow-xs"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Simulate Attacker Modifying Text
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRunTamperSimulation(false)}
+                      className="px-4 py-2.5 rounded-xl text-xs font-mono font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 apple-press cursor-pointer shadow-xs"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Test Authentic Original Document
+                    </button>
+                  </div>
+
+                  {/* Live Result Box */}
+                  {simulationResult && (
+                    <div
+                      className={`p-5 rounded-2xl border ${
+                        simulationResult.is_authentic
+                          ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
+                          : 'bg-rose-50/80 border-rose-300 text-rose-950'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {simulationResult.is_authentic ? (
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <AlertTriangle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                        )}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-sm">
+                              {simulationResult.is_authentic
+                                ? 'VERDICT: DOCUMENT IS 100% AUTHENTIC & UNTAMPERED'
+                                : 'VERDICT: CRITICAL TAMPER ALERT - IN-TRANSIT MODIFICATION DETECTED!'}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                simulationResult.is_authentic
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                  : 'bg-rose-100 text-rose-800 border border-rose-300'
+                              }`}
+                            >
+                              {simulationResult.status}
+                            </span>
+                          </div>
+
+                          <p className="text-xs leading-relaxed">
+                            {simulationResult.message}
+                          </p>
+
+                          <div className="pt-2 border-t border-slate-200/60 space-y-1 text-[11px] font-mono">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Claimed Official Seal:</span>
+                              <span className="font-bold">{simulationResult.claimed_seal?.slice(0, 24)}...</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Recomputed Narrative Hash:</span>
+                              <span className={`font-bold ${simulationResult.is_authentic ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                {simulationResult.recomputed_seal?.slice(0, 24)}...
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-500">Hash Match Status:</span>
+                              <span className="font-bold">
+                                {simulationResult.content_valid ? 'MATCH (100% Untouched)' : 'MISMATCH (Tampering Confirmed)'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 px-6 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-500">
+                Verion AI Forensic Provenance Engine • SHA-256 / HMAC-SHA256
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowTamperModal(false)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider apple-press cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>

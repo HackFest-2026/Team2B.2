@@ -60,7 +60,7 @@ export default function AuditView({ currentUser, simulatedClearance }) {
   const handleDownloadPdf = async () => {
     setIsExportingPdf(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/export/pdf?simulate_clearance=${simulatedClearance}`, {
+      const res = await fetch(`/api/export/pdf?simulate_clearance=${simulatedClearance}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -84,7 +84,7 @@ export default function AuditView({ currentUser, simulatedClearance }) {
   const handleDownloadLedgerJson = async () => {
     setIsExportingLedger(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/export/provenance-ledger?simulate_clearance=${simulatedClearance}`, {
+      const res = await fetch(`/api/export/provenance-ledger?simulate_clearance=${simulatedClearance}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

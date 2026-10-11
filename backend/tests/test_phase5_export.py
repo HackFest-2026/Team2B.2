@@ -3,6 +3,7 @@ Phase 5 Verification Test Suite: Verified Cryptographic PDF Export, Audit Ledger
 Validates tamper-evident PDF generation, Zero Data Spillage in exported binaries,
 and Problem Statement (2B) Hackathon Benchmark KPIs.
 """
+import json
 import pytest
 import pymupdf
 from fastapi.testclient import TestClient
@@ -129,3 +130,52 @@ def test_api_benchmark_kpis():
     resilience = data["boundary_resilience_cases"]
     assert len(resilience) == 3
     assert all(r["status"] == "PASSED" for r in resilience)
+
+def test_api_dossier_json_export():
+    """Verify cryptographically sealed dossier JSON export with headers."""
+    headers = get_auth_header("officer_lead")
+    res = client.get("/api/export/dossier-json", headers=headers)
+    assert res.status_code == 200
+    assert "application/json" in res.headers["content-type"]
+    assert "x-dossier-sha256" in res.headers
+    assert "x-dossier-signature" in res.headers
+
+    data = res.json()
+    assert "dossier_sha256_seal" in data
+    assert "digital_signature" in data
+    assert data["tamper_protection"]["status"] == "CRYPTOGRAPHICALLY_SEALED"
+
+def test_tamper_detection_unaltered_and_altered_dossier():
+    """Verify that unmodified dossier verifies authentic, but altered text triggers TAMPER alert."""
+    headers = get_auth_header("officer_lead")
+    res = client.get("/api/export/dossier-json", headers=headers)
+    dossier_data = res.json()
+
+    # 1. Authentic verification
+    verify_res = client.post("/api/verify/dossier", json=dossier_data)
+    assert verify_res.status_code == 200
+    verify_data = verify_res.json()
+    assert verify_data["is_authentic"] is True
+    assert verify_data["status"] == "VERIFIED_AUTHENTIC"
+    assert verify_data["signature_valid"] is True
+    assert verify_data["content_valid"] is True
+
+    # 2. Tampered content: Alter one word in the executive summary
+    tampered_data = json.loads(json.dumps(dossier_data))
+    tampered_data["sections"][0]["content"] += " [UNAUTHORIZED TAMPERED TEXT INSERTED]"
+    
+    tamper_res = client.post("/api/verify/dossier", json=tampered_data)
+    assert tamper_res.status_code == 200
+    tamper_verdict = tamper_res.json()
+    assert tamper_verdict["is_authentic"] is False
+    assert tamper_verdict["status"] == "TAMPER_DETECTED_CONTENT_MODIFIED"
+    assert "Content modification detected" in tamper_verdict["message"]
+
+    # 3. Forged signature: Modify the digital signature
+    forged_data = json.loads(json.dumps(dossier_data))
+    forged_data["digital_signature"] = "deadbeef" * 8
+    forge_res = client.post("/api/verify/dossier", json=forged_data)
+    assert forge_res.status_code == 200
+    forge_verdict = forge_res.json()
+    assert forge_verdict["is_authentic"] is False
+    assert "INVALID_SIGNATURE" in forge_verdict["status"]

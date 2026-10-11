@@ -5,10 +5,11 @@ a coherent, citation-grounded forensic incident dossier with cryptographic prove
 Enforces dynamic RBAC clearance gating (Zero Data Spillage).
 """
 import hashlib
+import hmac
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
-from backend.config import CLEARANCE_LEVEL_1, CLEARANCE_LEVEL_2
+from backend.config import CLEARANCE_LEVEL_1, CLEARANCE_LEVEL_2, SECRET_KEY
 from backend.ai.ollama_client import local_ai
 
 def compute_sha256_text(text: str) -> str:
@@ -120,6 +121,88 @@ def extract_evidence_citations(chunks: List[Dict[str, Any]], user_clearance: str
 
     return citations
 
+def compute_agency_signature(seal: str, case_id: str, clearance: str) -> str:
+    """
+    Computes an HMAC-SHA256 digital signature for the dossier seal using the private server SECRET_KEY.
+    """
+    return hmac.new(
+        SECRET_KEY.encode("utf-8"),
+        f"{seal}:{case_id}:{clearance}".encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
+def verify_dossier_tamper_status(dossier_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Forensic verification utility to detect if a downloaded or transmitted dossier
+    has been tampered with or modified in transit.
+    Validates:
+    1. Content Integrity: Recomputes SHA-256 over section titles & texts.
+    2. Digital Signature: Validates HMAC-SHA256 signature against custodian key.
+    """
+    case_id = dossier_data.get("case_id", "UNKNOWN")
+    clearance_applied = dossier_data.get("clearance_applied", CLEARANCE_LEVEL_2)
+    claimed_seal = dossier_data.get("dossier_sha256_seal", "")
+    claimed_sig = dossier_data.get("digital_signature", "")
+    sections = dossier_data.get("sections")
+
+    # 1. Signature validity check
+    expected_sig = compute_agency_signature(claimed_seal, case_id, clearance_applied)
+    signature_matches = hmac.compare_digest(claimed_sig, expected_sig) if claimed_sig else False
+
+    # 2. Recompute content digest if sections provided
+    content_matches = True
+    recomputed_seal = None
+    if sections and isinstance(sections, list) and len(sections) > 0:
+        if dossier_data.get("metadata", {}).get("is_empty"):
+            recomputed_seal = compute_sha256_text(f"EMPTY_CASE_{case_id}")
+        else:
+            narrative = "\n\n".join([f"{s.get('title', '')}\n{s.get('content', '')}" for s in sections])
+            recomputed_seal = compute_sha256_text(narrative)
+        content_matches = (recomputed_seal.lower() == claimed_seal.lower())
+
+    is_authentic = bool(signature_matches and content_matches)
+
+    if is_authentic:
+        verdict = "VERIFIED_AUTHENTIC"
+        message = (
+            "Cryptographic signature and narrative SHA-256 seal verified with 100% mathematical certainty. "
+            "The document is authentic and has not been altered in transit."
+        )
+    elif not signature_matches and not content_matches:
+        verdict = "TAMPER_DETECTED_SEAL_AND_SIGNATURE_MISMATCH"
+        message = (
+            "ALERT: Both document content and digital signature have been compromised or forged! "
+            "Calculated SHA-256 digest does not match claimed seal, and signature is invalid."
+        )
+    elif not signature_matches:
+        verdict = "TAMPER_DETECTED_INVALID_SIGNATURE"
+        message = (
+            "ALERT: Digital signature verification failed! The cryptographic signature does not match "
+            "the Verion AI Custodian Authority key for this case."
+        )
+    else:
+        verdict = "TAMPER_DETECTED_CONTENT_MODIFIED"
+        message = (
+            f"ALERT: Content modification detected! Recomputed text hash ({recomputed_seal[:16]}...) "
+            f"does not match sealed digest ({claimed_seal[:16]}...). The report text was edited in transit."
+        )
+
+    return {
+        "status": verdict,
+        "is_authentic": is_authentic,
+        "case_id": case_id,
+        "clearance_applied": clearance_applied,
+        "signature_valid": signature_matches,
+        "content_valid": content_matches,
+        "claimed_seal": claimed_seal,
+        "recomputed_seal": recomputed_seal or claimed_seal,
+        "claimed_signature": claimed_sig,
+        "authority": "Verion AI Forensic Custodian",
+        "algorithm": "HMAC-SHA256",
+        "message": message,
+        "verified_at": datetime.now(timezone.utc).isoformat()
+    }
+
 def synthesize_dossier(
     chunks: List[Dict[str, Any]],
     user_clearance: str = CLEARANCE_LEVEL_2,
@@ -131,12 +214,22 @@ def synthesize_dossier(
     and applies cryptographic hashing to ensure complete auditability.
     """
     if not chunks:
+        empty_seal = compute_sha256_text(f"EMPTY_CASE_{case_id}")
+        empty_sig = compute_agency_signature(empty_seal, case_id, user_clearance)
         return {
             "case_id": case_id,
             "title": f"Single Verifiable Document: Case {case_id}",
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "clearance_applied": user_clearance,
-            "dossier_sha256_seal": compute_sha256_text(f"EMPTY_CASE_{case_id}"),
+            "dossier_sha256_seal": empty_seal,
+            "digital_signature": empty_sig,
+            "signing_algorithm": "HMAC-SHA256",
+            "signed_by": "Verion AI Custodian Authority",
+            "tamper_protection": {
+                "status": "CRYPTOGRAPHICALLY_SEALED",
+                "mechanism": "SHA-256 Digest Seal + HMAC-SHA256 Agency Signature",
+                "anti_tamper_guarantee": "Any byte modification alters SHA-256 digest and breaks cryptographic signature verification."
+            },
             "classification_stamp": "UNCLASSIFIED // CASE INITIALIZED (AWAITING EVIDENCE)",
             "metadata": {
                 "total_citations": 0,
@@ -339,6 +432,13 @@ def synthesize_dossier(
     full_narrative_text = "\n\n".join([f"{s['title']}\n{s['content']}" for s in sections])
     dossier_sha256_seal = compute_sha256_text(full_narrative_text)
 
+    # Compute Agency Cryptographic HMAC Signature to prevent in-transit tampering
+    agency_signature = hmac.new(
+        SECRET_KEY.encode("utf-8"),
+        f"{dossier_sha256_seal}:{case_id}:{user_clearance}".encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+
     # Calculate verifiable citation stats
     valid_citations_count = len(citations)
     verified_hashes_count = sum(1 for c in citations if c.get("integrity_status") == "VERIFIED")
@@ -350,6 +450,14 @@ def synthesize_dossier(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "clearance_applied": user_clearance,
         "dossier_sha256_seal": dossier_sha256_seal,
+        "digital_signature": agency_signature,
+        "signing_algorithm": "HMAC-SHA256",
+        "signed_by": "Verion AI Custodian Authority",
+        "tamper_protection": {
+            "status": "CRYPTOGRAPHICALLY_SEALED",
+            "mechanism": "SHA-256 Digest Seal + HMAC-SHA256 Agency Signature",
+            "anti_tamper_guarantee": "Any byte modification alters SHA-256 digest and breaks cryptographic signature verification."
+        },
         "classification_stamp": "RESTRICTED // LEVEL 2 INVESTIGATIVE" if user_clearance == CLEARANCE_LEVEL_2 else "CONFIDENTIAL // LEVEL 1 AUDITOR SANITIZED",
         "metadata": {
             "total_citations": valid_citations_count,

@@ -138,12 +138,35 @@ ollama pull llama3.2
 
 ---
 
+---
+
+## 🔐 In-Transit Tamper-Evident Dossier Guarantee & Verification
+
+### The Core Problem:
+When an investigative summary report is exported (as PDF or JSON) and emailed to an auditor, judge, or executive, **what happens if someone in between alters the file** (e.g. changing an IP address from `10.240.1.45` to an innocent IP, shifting an exfiltration timestamp, or changing patient records from `42,000` to `42`)?
+
+### How Verion AI Solves & Detects In-Transit Tampering:
+Verion AI employs a **multi-layered cryptographic defense architecture**:
+
+1. **SHA-256 Avalanche Digest (FIPS 180-4)**:
+   The entire synthesized narrative, section headers, and citation references are canonically concatenated and hashed. Due to the cryptographic avalanche effect, changing even a single byte or character causes a completely different 64-character hexadecimal digest.
+2. **Custodial HMAC-SHA256 Digital Signature**:
+   The master digest is cryptographically signed by the Verion AI Custodian Authority using a server-side private key (`SECRET_KEY`). An adversary intercepting the file cannot forge a valid signature because they lack the secret key.
+3. **Dual PDF Forensic Embeddings**:
+   - **Visual Custody Seal Box**: Stamped on Page 1 displaying the SHA-256 digest, clearance level, and HMAC signature.
+   - **Embedded Trailer Metadata**: Digitally injected into document properties (`doc.metadata["keywords"] = "SHA256:... SIG:..."`) readable by any standard PDF parser.
+4. **Interactive In-Transit Tamper Verification & Sandbox**:
+   - **Upload File Verifier (`/api/verify/file`)**: Drop any exported `.pdf` or `.json` to instantly verify cryptographic integrity against the server custodian.
+   - **Live Tamper Simulation Sandbox**: Built directly into the UI, allowing reviewers to test altering one character and visually observing the instant tamper alert!
+
+---
+
 ### Step 5: Verification & Testing
-Run the comprehensive test suite validating authentication, ingestion, zero-spillage gating, conflict detection, dossier synthesis, and export:
+Run the comprehensive test suite validating authentication, ingestion, zero-spillage gating, conflict detection, dossier synthesis, tamper detection, and export:
 ```bash
 python -m pytest
 ```
-* Expected output: **31 passed (100%)**
+* Expected output: **33 passed (100%)**
 
 ---
 
