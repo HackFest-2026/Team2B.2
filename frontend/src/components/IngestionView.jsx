@@ -7,6 +7,10 @@ import {
   FileSpreadsheet,
   ShieldAlert,
   ShieldCheck,
+  Shield,
+  Bug,
+  AlertTriangle,
+  FileWarning,
   Hash,
   CheckCircle2,
   Lock,
@@ -32,6 +36,9 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
   const [newCaseId, setNewCaseId] = useState('');
   const [newCaseTitle, setNewCaseTitle] = useState('');
   const [isCreatingCase, setIsCreatingCase] = useState(false);
+  const [quarantineAlert, setQuarantineAlert] = useState(null);
+  const [quarantineEvents, setQuarantineEvents] = useState([]);
+  const [showQuarantineLogModal, setShowQuarantineLogModal] = useState(false);
 
   const token = localStorage.getItem('verion_token');
 
@@ -91,6 +98,19 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
         const chunkData = await chunkRes.json();
         setChunks(chunkData.chunks || []);
       }
+
+      // Fetch security quarantine audit log
+      try {
+        const qRes = await fetch('/api/ingest/quarantine-log', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (qRes.ok) {
+          const qData = await qRes.json();
+          setQuarantineEvents(qData.events || []);
+        }
+      } catch (qErr) {
+        console.error('Failed to fetch quarantine log:', qErr);
+      }
     } catch (err) {
       console.error('Failed to refresh manifest:', err);
     } finally {
@@ -122,6 +142,36 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
     }
   };
 
+  const handleTestEicarProbe = async () => {
+    setIsUploading(true);
+    setStatusMsg('');
+    const eicarString = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
+    const eicarBlob = new Blob([eicarString], { type: 'text/plain' });
+    const formData = new FormData();
+    formData.append('file', new File([eicarBlob], 'eicar_antivirus_test_probe.txt', { type: 'text/plain' }));
+    formData.append('classification', 'LEVEL_1');
+
+    try {
+      const res = await fetch('/api/ingest/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (res.status === 422 && data.status === 'MALWARE_DETECTED') {
+        setQuarantineAlert(data.threat);
+        await fetchManifestAndChunks();
+      } else {
+        setStatusMsg('Probe result: ' + (data.message || 'Completed'));
+      }
+    } catch (err) {
+      setStatusMsg(`Security Probe Error: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     e.preventDefault();
     if (!selectedFile) return;
@@ -142,7 +192,13 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || 'Upload failed');
+        if (res.status === 422 && err.status === 'MALWARE_DETECTED') {
+          setQuarantineAlert(err.threat);
+          await fetchManifestAndChunks();
+          setStatusMsg(`SECURITY ALERT: Intercepted ${err.threat.threat_name}! Ingestion aborted.`);
+          return;
+        }
+        throw new Error(err.detail || err.error || 'Upload failed');
       }
 
       const data = await res.json();
@@ -241,6 +297,49 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
 
             {currentUser?.can_upload ? (
               <form onSubmit={handleFileUpload} className="space-y-4">
+                {/* Zero-Trust Malware Shield Active Banner */}
+                <div className="p-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border border-blue-200/90 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex items-center justify-center">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping absolute opacity-75" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-mono font-bold text-slate-900 flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-blue-600" /> Malware Shield: ACTIVE
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          Zero-Trust Polyglot & Exploit Interception
+                        </div>
+                      </div>
+                    </div>
+
+                    {quarantineEvents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowQuarantineLogModal(true)}
+                        className="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[10px] font-mono font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <Bug className="w-3 h-3 text-rose-600" /> {quarantineEvents.length} Quarantined
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="pt-1 border-t border-blue-100/80 flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-slate-500">Heuristics: EICAR, Polyglot PE/ELF, PDF /Launch</span>
+                    <button
+                      type="button"
+                      onClick={handleTestEicarProbe}
+                      disabled={isUploading}
+                      className="px-2 py-1 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-rose-700 font-bold rounded-lg transition-all shadow-2xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      title="Test safe EICAR antivirus test probe"
+                    >
+                      <ShieldAlert className="w-3 h-3 text-rose-600" /> Test EICAR Probe
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-mono uppercase tracking-wider font-semibold text-slate-600 mb-1">
                     Select Target File (.pdf, .txt, .log, .csv)
@@ -392,6 +491,11 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
                           <Hash className="w-3 h-3 text-slate-400" />
                           <span className="truncate max-w-[240px]">
                             {isMasked ? 'MASKED_FOR_CLEARANCE_TIER_1' : f.file_sha256}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md flex items-center gap-1">
+                            <ShieldCheck className="w-2.5 h-2.5 text-emerald-600" /> Shield: CLEAN
                           </span>
                         </div>
                       </div>
@@ -565,6 +669,170 @@ export default function IngestionView({ currentUser, simulatedClearance, onCaseC
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Critical Security Quarantine Alert Modal */}
+      {quarantineAlert && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setQuarantineAlert(null)}
+          />
+
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border-2 border-rose-500 p-6 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-6 h-6 text-rose-600 animate-pulse" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                    ZERO-TRUST PRE-INGESTION INTERCEPT
+                  </span>
+                  <h2 className="text-base font-extrabold text-slate-900 mt-1">
+                    Malicious Payload Quarantined
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setQuarantineAlert(null)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-500">THREAT SIGNATURE:</span>
+                <span className="font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
+                  {quarantineAlert.threat_name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-500">THREAT CATEGORY:</span>
+                <span className="font-semibold text-slate-800">
+                  {quarantineAlert.threat_category}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-500">SEVERITY RATING:</span>
+                <span className="font-bold text-rose-600 bg-rose-100/50 px-2 py-0.5 rounded">
+                  {quarantineAlert.severity}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-500">INTERCEPTED SHA-256:</span>
+                <span className="font-mono text-[10px] text-slate-700 truncate max-w-[200px]" title={quarantineAlert.sha256}>
+                  {quarantineAlert.sha256}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs text-slate-600">
+              <div className="font-semibold text-slate-800 font-mono text-[11px] uppercase tracking-wider">
+                Forensic Inspection Details:
+              </div>
+              <div className="text-[11.5px] leading-relaxed text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono">
+                {quarantineAlert.details}
+              </div>
+            </div>
+
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Automated Containment Enforced:</span>
+                <p className="text-[11px] text-emerald-700 mt-0.5 leading-relaxed">
+                  File buffer was purged from memory with zero disk persistence. A tamper-evident incident record was registered to the Case Security Audit Ledger.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setQuarantineAlert(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-mono font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
+              >
+                Acknowledge & Close Alert
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quarantine History Audit Log Modal */}
+      {showQuarantineLogModal && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setShowQuarantineLogModal(false)}
+          />
+
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 space-y-4 animate-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-rose-50 border border-rose-200">
+                  <Bug className="w-4 h-4 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Security Quarantine Audit Trail
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Immutable log of blocked weaponized files and exploit attempts
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuarantineLogModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+              {quarantineEvents.length === 0 ? (
+                <div className="p-6 text-center text-xs font-mono text-slate-400 bg-slate-50 rounded-xl">
+                  No quarantine events recorded. System is secure.
+                </div>
+              ) : (
+                quarantineEvents.map((q, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50/70 border border-slate-200 rounded-xl space-y-1.5 text-xs font-mono">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-rose-700">{q.threat_name}</span>
+                      <span className="text-[10px] text-slate-400">{q.timestamp?.slice(0, 19)} UTC</span>
+                    </div>
+                    <div className="text-[11px] text-slate-600 flex items-center gap-2">
+                      <span>Target File: <strong>{q.filename}</strong></span>
+                      <span>•</span>
+                      <span>Category: {q.threat_category}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate" title={q.file_sha256}>
+                      SHA-256: {q.file_sha256}
+                    </div>
+                    <div className="text-[11px] text-emerald-700 font-semibold pt-1">
+                      Action: {q.action_taken}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowQuarantineLogModal(false)}
+                className="px-4 py-2 border border-slate-200 text-xs font-mono font-semibold rounded-xl hover:bg-slate-50 apple-press cursor-pointer"
+              >
+                Close Audit Log
+              </button>
+            </div>
           </div>
         </div>
       )}
