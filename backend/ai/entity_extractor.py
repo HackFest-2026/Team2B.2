@@ -75,19 +75,45 @@ def extract_entities_from_chunks(chunks: List[Dict[str, Any]], user_clearance: s
             if chunk_id not in systems[hostname]["source_chunks"]:
                 systems[hostname]["source_chunks"].append(chunk_id)
 
-        # Check known infrastructure names
-        for known_host in ["gw-datacenter-01", "core-router-01", "db-primary.internal"]:
-            if known_host in text:
+        # Check known infrastructure names and homicide locations/assets
+        for known_host in [
+            "gw-datacenter-01", "core-router-01", "db-primary.internal",
+            "Warehouse Bay 4", "Metro Downtown Cinema", "Docklands Logistics Hub", "Plate 7XYZ-892 (Sapphire Blue SUV)"
+        ]:
+            if known_host.lower() in text.lower():
                 if known_host not in systems:
+                    is_vehicle = "7XYZ" in known_host
                     systems[known_host] = {
-                        "entity_id": f"HOST_{len(systems)+1:02d}",
+                        "entity_id": f"ASSET_{len(systems)+1:02d}",
                         "hostname": known_host,
-                        "type": "TARGET_SYSTEM",
+                        "type": "EVIDENCE_VEHICLE" if is_vehicle else ("CRIME_SCENE" if "Warehouse" in known_host else "LOCATION"),
                         "classification": chunk_class,
                         "source_chunks": []
                     }
                 if chunk_id not in systems[known_host]["source_chunks"]:
                     systems[known_host]["source_chunks"].append(chunk_id)
+
+        # Homicide actors in text
+        for person_name, person_type in [
+            ("Jonathan Vance", "VICTIM_DECEDENT"),
+            ("Marcus Sterling", "PRIMARY_SUSPECT"),
+            ("Detective Sarah Ramos", "LEAD_INVESTIGATOR"),
+            ("Dr. Eleanor Ward", "MEDICAL_EXAMINER")
+        ]:
+            if person_name.lower() in text.lower():
+                if person_name not in actors:
+                    actors[person_name] = {
+                        "entity_id": f"ACTOR_{len(actors)+1:02d}",
+                        "name": person_name,
+                        "type": person_type,
+                        "aliases": [person_name],
+                        "classification": chunk_class,
+                        "mentions_count": 0,
+                        "source_chunks": []
+                    }
+                actors[person_name]["mentions_count"] += 1
+                if chunk_id not in actors[person_name]["source_chunks"]:
+                    actors[person_name]["source_chunks"].append(chunk_id)
 
         # 3. Resolve IP Addresses
         for ip in IP_PATTERN.findall(text):

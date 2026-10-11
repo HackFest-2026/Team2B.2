@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  FolderOpen,
   LayoutDashboard,
   UploadCloud,
   Layers,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
+  { id: 'cases', label: 'Case Management', icon: FolderOpen },
   { id: 'overview', label: 'Overview & KPIs', icon: LayoutDashboard },
   { id: 'ingestion', label: 'Evidence Ingestion', icon: UploadCloud },
   { id: 'workspace', label: 'Investigation Workspace', icon: Layers },

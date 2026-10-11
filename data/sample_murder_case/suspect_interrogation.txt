@@ -1,0 +1,28 @@
+================================================================================
+METROPOLITAN POLICE DEPARTMENT - HOMICIDE DIVISION
+INTERVIEW RECORD // FORM 104-B
+================================================================================
+CASE FILE:       CR-2026-1009-HOMICIDE (Docklands Logistics Homicide)
+DATE / TIME:     2026-10-10 09:15:00 UTC
+LOCATION:        Interview Room 3, Central Precinct
+INTERVIEWER:     Detective Sarah Ramos (Badge #4412)
+WITNESS/SUSPECT: Marcus Sterling (Chief Operations Partner)
+ATTORNEY:        Julian Mercer (Present)
+CLEARANCE:       LEVEL 1 - UNCLASSIFIED // FORMAL DEPOSITION RECORD
+================================================================================
+
+[09:15:22] DETECTIVE RAMOS: Mr. Sterling, for the record, please state your full name and your relationship with the deceased, Jonathan Vance.
+[09:15:35] MARCUS STERLING: My name is Marcus Sterling. Jonathan and I co-founded Vantage Logistics. We have been 50-50 business partners for eight years.
+[09:16:02] DETECTIVE RAMOS: When did you last see Mr. Vance alive at the Warehouse Bay 4 office on the evening of October 9th?
+[09:16:20] MARCUS STERLING: We had an audit review meeting on Friday evening. We finished going over our books at 20:30 UTC. I packed my briefcase and clocked out through Gate 3 right around 20:30. Jonathan stayed behind to finalize inventory manifests.
+[09:17:05] DETECTIVE RAMOS: Where did you go after leaving the warehouse at 20:30 UTC?
+[09:17:22] MARCUS STERLING: I drove straight to the Metro Downtown Cinema on Grand Avenue. I wanted to catch the 21:00 screening of the premiere. I arrived at the theater parking lot around 20:50, bought a ticket with cash, and sat inside from 21:00 until 23:15 UTC.
+[09:18:00] DETECTIVE RAMOS: Did you leave the cinema auditorium at any point between 21:00 and 23:15?
+[09:18:18] MARCUS STERLING: Absolutely not. I remained seated in the theater the entire movie. My phone was turned completely off in my coat pocket. I did not step out until 23:15.
+[09:18:45] DETECTIVE RAMOS: Did you return to Warehouse Bay 4 at any point later that night?
+[09:19:02] MARCUS STERLING: No, I never returned to the warehouse. Under no circumstances did I go back to Industrial Row that night. The first time I learned Jonathan was injured or killed was when your precinct called my residence at 01:30 in the morning.
+[09:19:40] DETECTIVE RAMOS: What vehicle were you driving on the night of October 9th?
+[09:19:55] MARCUS STERLING: My personal blue Sapphire SUV. License plate 7XYZ-892. It remained parked outside the cinema the entire duration.
+[09:20:25] DETECTIVE RAMOS: Thank you. Interview paused at 09:20 UTC.
+================================================================================
+END OF TRANSCRIPT CHUNK

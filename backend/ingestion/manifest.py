@@ -13,6 +13,43 @@ class IngestionManifestStore:
         self.case_title: str = "Unauthorized Relational Cluster Exfiltration"
         self.files: Dict[str, Dict[str, Any]] = {}
         self.all_chunks: List[Dict[str, Any]] = []
+        # Registry of all cases (keyed by case_id)
+        self.cases_registry: Dict[str, Dict[str, Any]] = {}
+        # Analysis cache to prevent re-generation on tab switching
+        self._analysis_cache: Dict[str, Any] = {}
+
+    def get_cached_analysis(self, key: str) -> Optional[Any]:
+        return self._analysis_cache.get(key)
+
+    def set_cached_analysis(self, key: str, value: Any) -> None:
+        self._analysis_cache[key] = value
+
+    def invalidate_analysis_cache(self) -> None:
+        self._analysis_cache.clear()
+
+    def _snapshot_current(self) -> None:
+        """Snapshots the current active case into the registry."""
+        if self.case_id:
+            self.cases_registry[self.case_id] = {
+                "case_id": self.case_id,
+                "title": self.case_title,
+                "total_files": len(self.files),
+                "total_chunks": len(self.all_chunks),
+                "files": dict(self.files),
+                "chunks": list(self.all_chunks),
+            }
+
+    def _restore_case(self, case_id: str) -> bool:
+        """Restores a case from the registry as the active case."""
+        entry = self.cases_registry.get(case_id)
+        if not entry:
+            return False
+        self.case_id = entry["case_id"]
+        self.case_title = entry["title"]
+        self.files = dict(entry.get("files", {}))
+        self.all_chunks = list(entry.get("chunks", []))
+        self.invalidate_analysis_cache()
+        return True
 
     def create_new_case(
         self,
@@ -21,10 +58,15 @@ class IngestionManifestStore:
         created_by: str = "officer_lead"
     ) -> Dict[str, Any]:
         """Initializes a fresh case container and resets evidence ledger."""
+        # Archive currently active case first
+        self._snapshot_current()
         self.case_id = case_id
         self.case_title = title
         self.files.clear()
         self.all_chunks.clear()
+        # Register the new (empty) case
+        self._snapshot_current()
+        self.invalidate_analysis_cache()
         return {
             "status": "success",
             "case_id": self.case_id,
@@ -55,7 +97,9 @@ class IngestionManifestStore:
         # Remove any prior chunks from this file to support re-ingestion
         self.all_chunks = [c for c in self.all_chunks if c["source_file"] != filepath.name]
         self.all_chunks.extend(processed["chunks"])
-        
+        # Keep registry in sync
+        self._snapshot_current()
+        self.invalidate_analysis_cache()
         return self.files[filepath.name]
 
     def get_manifest_summary(self) -> Dict[str, Any]:
@@ -82,6 +126,12 @@ class IngestionManifestStore:
 
     def load_benchmark_dataset(self, ingested_by: str = "officer_lead") -> Dict[str, Any]:
         """Loads and seals the 3 benchmark case files with explicit classification tagging."""
+        # Archive current before overwriting
+        self._snapshot_current()
+        self.case_id = "IR-2026-0914-ALPHA"
+        self.case_title = "Unauthorized Relational Cluster Exfiltration"
+        self.files.clear()
+        self.all_chunks.clear()
         benchmark_dir = Path(__file__).resolve().parent.parent.parent / "data" / "benchmark_case"
         
         mapping = [
@@ -96,13 +146,48 @@ class IngestionManifestStore:
             if path.exists():
                 res = self.ingest_file(path, classification_level=clearance, ingested_by=ingested_by)
                 ingested.append(res)
-                
+
+        # Registry is already updated by ingest_file calls
+        self.invalidate_analysis_cache()
         return {
             "status": "success",
             "message": "Benchmark dataset ingested and cryptographically stamped.",
             "ingested_files": ingested,
             "manifest_summary": self.get_manifest_summary()
         }
+
+    def list_cases(self) -> List[Dict[str, Any]]:
+        """Returns summary info for all cases in the registry."""
+        # Make sure the active case is up to date in the registry
+        self._snapshot_current()
+        result = []
+        for cid, entry in self.cases_registry.items():
+            result.append({
+                "case_id": entry["case_id"],
+                "title": entry["title"],
+                "total_files": entry["total_files"],
+                "total_chunks": entry["total_chunks"],
+                "is_active": cid == self.case_id,
+            })
+        return result
+
+    def delete_case(self, case_id: str) -> bool:
+        """Deletes a case from the registry. Cannot delete the active case."""
+        if case_id == self.case_id:
+            return False
+        if case_id in self.cases_registry:
+            del self.cases_registry[case_id]
+            self.invalidate_analysis_cache()
+            return True
+        return False
+
+    def switch_case(self, case_id: str) -> bool:
+        """Switches the active case to a different one from the registry."""
+        if case_id == self.case_id:
+            return True
+        # Snapshot current before switching
+        self._snapshot_current()
+        return self._restore_case(case_id)
 
 # Global singleton manifest store
 manifest_store = IngestionManifestStore()

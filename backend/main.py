@@ -105,25 +105,34 @@ def get_current_user_profile(user: Dict[str, Any] = Depends(get_current_user)):
 
 @app.get("/api/benchmark/files")
 def list_benchmark_files(user: Dict[str, Any] = Depends(get_current_user)):
-    """List bundled benchmark files with sizes and classification markers."""
-    benchmark_dir = Path(__file__).resolve().parent.parent / "data" / "benchmark_case"
-    files = []
-    
-    if benchmark_dir.exists():
-        for f in benchmark_dir.iterdir():
-            if f.is_file() and not f.name.endswith(".py"):
-                classification = CLEARANCE_LEVEL_2 if "auth_firewall" in f.name else CLEARANCE_LEVEL_1
-                files.append({
-                    "filename": f.name,
-                    "size_bytes": f.stat().st_size,
-                    "classification": classification,
-                    "extension": f.suffix
-                })
-                
+    """List active case files with sizes and classification markers."""
     return {
-        "case_id": "CASE-2026-ALPHA",
-        "title": "Unauthorized Relational Cluster Exfiltration",
-        "files": files
+        "case_id": manifest_store.case_id,
+        "title": manifest_store.case_title,
+        "total_files": len(manifest_store.files),
+        "files": [
+            {
+                "filename": f["filename"],
+                "size_bytes": f["size_bytes"],
+                "classification": f["classification"],
+                "extension": f["extension"],
+                "chunk_count": f.get("chunk_count", 0),
+                "file_sha256": f.get("file_sha256", "")
+            }
+            for f in manifest_store.files.values()
+        ]
+    }
+
+@app.get("/api/case/current")
+def get_current_case(user: Dict[str, Any] = Depends(get_current_user)):
+    """Returns the currently active case metadata, files, and stats."""
+    return {
+        "case_id": manifest_store.case_id,
+        "title": manifest_store.case_title,
+        "total_files": len(manifest_store.files),
+        "total_chunks": len(manifest_store.all_chunks),
+        "files": list(manifest_store.files.values()),
+        "is_empty": len(manifest_store.files) == 0
     }
 
 # ----------------- Evidence Ingestion & Case Management -----------------
@@ -146,6 +155,43 @@ def create_new_case_endpoint(
             detail="Forbidden: Only Evidence Custodian & Lead Officer can initialize new investigation cases."
         )
     return manifest_store.create_new_case(data.case_id, data.title, created_by=user["username"])
+
+@app.get("/api/cases")
+def list_all_cases(user: Dict[str, Any] = Depends(get_current_user)):
+    """Returns a list of all cases in the registry."""
+    return {"cases": manifest_store.list_cases()}
+
+@app.delete("/api/cases/{case_id}")
+def delete_case(case_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    """Deletes a case from the registry. Only officers can delete. Cannot delete active case."""
+    if not user.get("can_upload", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only Evidence Custodian & Lead Officer can delete cases."
+        )
+    success = manifest_store.delete_case(case_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete the active case or case not found. Switch to another case first."
+        )
+    return {"status": "deleted", "case_id": case_id}
+
+@app.post("/api/cases/{case_id}/activate")
+def switch_active_case(case_id: str, user: Dict[str, Any] = Depends(get_current_user)):
+    """Switches the active case to a different one from the registry."""
+    if not user.get("can_upload", False):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Only Evidence Custodian & Lead Officer can switch cases."
+        )
+    success = manifest_store.switch_case(case_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case not found in registry."
+        )
+    return {"status": "activated", "case_id": case_id, "title": manifest_store.case_title}
 
 @app.post("/api/ingest/benchmark")
 def ingest_benchmark_dataset(user: Dict[str, Any] = Depends(get_current_user)):
@@ -253,12 +299,22 @@ def get_timeline(
         effective_clearance = CLEARANCE_LEVEL_1
 
     chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    cache_key = f"timeline_{manifest_store.case_id}_{effective_clearance}"
+    cached = manifest_store.get_cached_analysis(cache_key)
+    if cached:
+        is_stale_empty = cached.get("chunks_count", -1) == 0 and len(chunks) > 0
+        if not is_stale_empty:
+            return cached
+
     events = build_unified_timeline(chunks, user_clearance=effective_clearance)
-    return {
+    result = {
         "effective_clearance": effective_clearance,
         "total_events": len(events),
-        "events": events
+        "events": events,
+        "chunks_count": len(chunks)
     }
+    manifest_store.set_cached_analysis(cache_key, result)
+    return result
 
 @app.get("/api/analysis/conflicts")
 def get_conflicts(
@@ -274,12 +330,22 @@ def get_conflicts(
         effective_clearance = CLEARANCE_LEVEL_1
 
     chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
+    cache_key = f"conflicts_{manifest_store.case_id}_{effective_clearance}"
+    cached = manifest_store.get_cached_analysis(cache_key)
+    if cached:
+        is_stale_empty = cached.get("chunks_count", -1) == 0 and len(chunks) > 0
+        if not is_stale_empty:
+            return cached
+
     conflicts = detect_cross_source_conflicts(chunks, user_clearance=effective_clearance)
-    return {
+    result = {
         "effective_clearance": effective_clearance,
         "total_conflicts": len(conflicts),
-        "conflicts": conflicts
+        "conflicts": conflicts,
+        "chunks_count": len(chunks)
     }
+    manifest_store.set_cached_analysis(cache_key, result)
+    return result
 
 @app.post("/api/analysis/run")
 def trigger_analysis(
@@ -291,24 +357,43 @@ def trigger_analysis(
     if effective_clearance == CLEARANCE_LEVEL_2 and simulate_clearance == CLEARANCE_LEVEL_1:
         effective_clearance = CLEARANCE_LEVEL_1
 
+    # Invalidate stale cache
+    manifest_store.invalidate_analysis_cache()
+
     chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
     entities = extract_entities_from_chunks(chunks, user_clearance=effective_clearance)
     timeline = build_unified_timeline(chunks, user_clearance=effective_clearance)
     conflicts = detect_cross_source_conflicts(chunks, user_clearance=effective_clearance)
+    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance, case_id=manifest_store.case_id)
+
+    # Pre-populate analysis cache so subsequent tab navigation is instant and consistent
+    manifest_store.set_cached_analysis(f"timeline_{manifest_store.case_id}_{effective_clearance}", {
+        "effective_clearance": effective_clearance,
+        "total_events": len(timeline),
+        "events": timeline
+    })
+    manifest_store.set_cached_analysis(f"conflicts_{manifest_store.case_id}_{effective_clearance}", {
+        "effective_clearance": effective_clearance,
+        "total_conflicts": len(conflicts),
+        "conflicts": conflicts
+    })
+    manifest_store.set_cached_analysis(f"dossier_{manifest_store.case_id}_{effective_clearance}", dossier)
 
     return {
         "status": "success",
-        "case_id": "IR-2026-0914-ALPHA",
+        "case_id": manifest_store.case_id,
         "gpu_inference_mode": "Ollama / On-Prem Native",
         "clearance_applied": effective_clearance,
         "summary": {
             "entities_resolved": entities["total_actors"] + entities["total_systems"] + entities["total_ips"],
             "timeline_events": len(timeline),
-            "conflicts_detected": len(conflicts)
+            "conflicts_detected": len(conflicts),
+            "dossier_sections": len(dossier.get("sections", []))
         },
         "entities": entities,
         "timeline": timeline,
-        "conflicts": conflicts
+        "conflicts": conflicts,
+        "dossier": dossier
     }
 
 # ----------------- Phase 4 Single Verifiable Document / Dossier -----------------
@@ -328,7 +413,17 @@ def get_synthesized_dossier(
         effective_clearance = CLEARANCE_LEVEL_1
 
     chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
-    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance)
+    cache_key = f"dossier_{manifest_store.case_id}_{effective_clearance}"
+    cached = manifest_store.get_cached_analysis(cache_key)
+    
+    # If cache exists and is not an outdated empty-case placeholder when evidence now exists
+    if cached:
+        is_stale_empty = cached.get("metadata", {}).get("is_empty", False) and len(chunks) > 0
+        if not is_stale_empty:
+            return cached
+
+    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance, case_id=manifest_store.case_id)
+    manifest_store.set_cached_analysis(cache_key, dossier)
     return dossier
 
 # ----------------- Phase 5 PDF Export & Audit Benchmark Endpoints -----------------
@@ -349,7 +444,7 @@ def export_dossier_pdf(
         effective_clearance = CLEARANCE_LEVEL_1
 
     chunks = manifest_store.get_chunks_for_clearance(effective_clearance)
-    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance)
+    dossier = synthesize_dossier(chunks, user_clearance=effective_clearance, case_id=manifest_store.case_id)
     pdf_bytes = generate_dossier_pdf(dossier)
 
     filename = f"Verion_Dossier_{dossier['case_id']}_{effective_clearance}.pdf"
@@ -394,7 +489,7 @@ def get_benchmark_kpis(
     """
     chunks_l2 = manifest_store.get_chunks_for_clearance(CLEARANCE_LEVEL_2)
     chunks_l1 = manifest_store.get_chunks_for_clearance(CLEARANCE_LEVEL_1)
-    dossier = synthesize_dossier(chunks_l2, user_clearance=CLEARANCE_LEVEL_2)
+    dossier = synthesize_dossier(chunks_l2, user_clearance=CLEARANCE_LEVEL_2, case_id=manifest_store.case_id)
 
     return {
         "benchmark_id": "KLE-HACKFEST-2026-EVAL",

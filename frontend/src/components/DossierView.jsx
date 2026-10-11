@@ -16,11 +16,12 @@ import {
   Info,
   X,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  RefreshCw
 } from 'lucide-react';
 import LiquidGlass from './ui/LiquidGlass';
 
-export default function DossierView({ currentUser, simulatedClearance }) {
+export default function DossierView({ currentUser, simulatedClearance, analysisVersion, activeTab }) {
   const [dossier, setDossier] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCitation, setSelectedCitation] = useState(null);
@@ -31,16 +32,22 @@ export default function DossierView({ currentUser, simulatedClearance }) {
 
   const token = localStorage.getItem('verion_token');
 
-  // Fetch dossier on load or when clearance switches
+  // Fetch dossier on load or when clearance switches or analysis runs
   useEffect(() => {
     fetchDossier();
-  }, [simulatedClearance]);
+  }, [simulatedClearance, analysisVersion]);
+
+  useEffect(() => {
+    if (activeTab === 'dossier' && (!dossier || dossier?.metadata?.is_empty) && !isLoading) {
+      fetchDossier();
+    }
+  }, [activeTab]);
 
   const fetchDossier = async () => {
     setIsLoading(true);
     setVerificationDone(false);
     try {
-      const url = `http://127.0.0.1:8000/api/analysis/dossier?simulate_clearance=${simulatedClearance}`;
+      const url = `/api/analysis/dossier?simulate_clearance=${simulatedClearance}`;
       const res = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -184,6 +191,15 @@ export default function DossierView({ currentUser, simulatedClearance }) {
               {copiedDoc ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
               {copiedDoc ? 'Copied' : 'Copy Dossier'}
             </button>
+
+            <button
+              type="button"
+              onClick={fetchDossier}
+              className="px-4 py-2 rounded-xl text-xs font-mono font-semibold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center gap-2 apple-press cursor-pointer shadow-2xs"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
         </div>
 
@@ -262,7 +278,10 @@ export default function DossierView({ currentUser, simulatedClearance }) {
 
             {/* Narrative text with embedded interactive citation pills */}
             <div className="text-sm md:text-base leading-relaxed text-slate-700 space-y-4">
-              {section.content.split('\n\n').map((paragraph, pIdx) => (
+              {(Array.isArray(section.content)
+                ? section.content.join('\n\n')
+                : (typeof section.content === 'string' ? section.content : String(section.content || ''))
+              ).split('\n\n').map((paragraph, pIdx) => (
                 <p key={pIdx} className="leading-relaxed">
                   {renderTextWithCitations(paragraph)}
                 </p>

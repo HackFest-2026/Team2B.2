@@ -19,7 +19,7 @@ import {
   X
 } from 'lucide-react';
 
-export default function IngestionView({ currentUser, simulatedClearance }) {
+export default function IngestionView({ currentUser, simulatedClearance, onCaseChanged, onUploadSuccess, analysisVersion, activeTab }) {
   const [manifest, setManifest] = useState(null);
   const [chunks, setChunks] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -58,6 +58,8 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
         setNewCaseId('');
         setNewCaseTitle('');
         await fetchManifestAndChunks();
+        // Notify App to refresh global state (header badge, all other views)
+        if (onCaseChanged) onCaseChanged();
       } else {
         const err = await res.json();
         setStatusMsg(`Case Creation Failed: ${err.detail || 'Unauthorized'}`);
@@ -98,7 +100,7 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
 
   useEffect(() => {
     fetchManifestAndChunks();
-  }, [simulatedClearance]);
+  }, [simulatedClearance, analysisVersion]);
 
   const handleBenchmarkIngest = async () => {
     setIsRefreshing(true);
@@ -111,6 +113,7 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
       if (res.ok) {
         setStatusMsg('Ground truth benchmark files sealed and registered successfully.');
         await fetchManifestAndChunks();
+        if (onUploadSuccess) onUploadSuccess();
       }
     } catch (err) {
       setStatusMsg('Failed to ingest benchmark case.');
@@ -146,6 +149,7 @@ export default function IngestionView({ currentUser, simulatedClearance }) {
       setStatusMsg(data.message);
       setSelectedFile(null);
       await fetchManifestAndChunks();
+      if (onUploadSuccess) onUploadSuccess();
     } catch (err) {
       setStatusMsg(`Upload Error: ${err.message}`);
     } finally {

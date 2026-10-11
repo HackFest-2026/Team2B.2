@@ -10,9 +10,7 @@ import {
   AlertOctagon,
   CheckCircle2,
   Lock,
-  ArrowUpRight,
-  Database,
-  Cpu
+  Database
 } from 'lucide-react';
 
 export default function OverviewView({ currentUser, simulatedClearance }) {
@@ -234,44 +232,7 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
         </div>
       </LiquidGlass>
 
-      {/* Cryptographic Verification Proofs Card */}
-      <div className="bg-slate-900 rounded-2xl text-white p-6 space-y-4 shadow-lg border border-slate-800">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2.5">
-            <Cpu className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-              Automated Verification Matrix (30/30 Tests Passed)
-            </span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-400">Pytest 9.1.1 // Local On-Prem Stack</span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
-          <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-1">
-            <div className="text-slate-400 text-[10px] uppercase">Access Control & RBAC</div>
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 7/7 PASSED (HMAC-SHA256)
-            </div>
-            <div className="text-[10px] text-slate-400">Officer, L2, L1 permissions verified</div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-1">
-            <div className="text-slate-400 text-[10px] uppercase">Multi-Source Ingestion & Hashing</div>
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 7/7 PASSED (SHA-256)
-            </div>
-            <div className="text-[10px] text-slate-400">PDF, Syslog, Chat parsed & fingerprinted</div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-slate-800/80 border border-slate-700/60 space-y-1">
-            <div className="text-slate-400 text-[10px] uppercase">Zero Data Spillage Gate</div>
-            <div className="text-emerald-400 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> 100% ENFORCED (Pre-Retrieval)
-            </div>
-            <div className="text-[10px] text-slate-400">Level 2 data mathematically isolated</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -16,7 +16,7 @@ import {
   FileText
 } from 'lucide-react';
 
-export default function WorkspaceView({ currentUser, simulatedClearance }) {
+export default function WorkspaceView({ currentUser, simulatedClearance, onAnalysisRan, analysisVersion, activeTab }) {
   const [timeline, setTimeline] = useState([]);
   const [entities, setEntities] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +54,13 @@ export default function WorkspaceView({ currentUser, simulatedClearance }) {
 
   useEffect(() => {
     fetchWorkspaceData();
-  }, [simulatedClearance]);
+  }, [simulatedClearance, analysisVersion]);
+
+  useEffect(() => {
+    if (activeTab === 'workspace' && timeline.length === 0 && !isLoading) {
+      fetchWorkspaceData();
+    }
+  }, [activeTab]);
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
@@ -65,6 +71,9 @@ export default function WorkspaceView({ currentUser, simulatedClearance }) {
       });
       if (res.ok) {
         await fetchWorkspaceData();
+        if (onAnalysisRan) {
+          onAnalysisRan();
+        }
       }
     } catch (err) {
       console.error('Analysis trigger failed:', err);

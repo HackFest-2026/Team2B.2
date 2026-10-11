@@ -37,3 +37,10 @@ Thumbs.db
 *.swo
 .vscode/
 .idea/
+
+# Runtime Uploads & Presentations
+data/uploads/*
+!data/uploads/.gitkeep
+!data/uploads/Hackathon Mentor Session-2B-AI-Data.pdf
+!data/uploads/test_note.txt
+*.pptx

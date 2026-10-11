@@ -15,7 +15,7 @@ import {
   Compass
 } from 'lucide-react';
 
-export default function ConflictRadarView({ currentUser, simulatedClearance }) {
+export default function ConflictRadarView({ currentUser, simulatedClearance, analysisVersion, activeTab }) {
   const [conflicts, setConflicts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -40,7 +40,13 @@ export default function ConflictRadarView({ currentUser, simulatedClearance }) {
 
   useEffect(() => {
     fetchConflicts();
-  }, [simulatedClearance]);
+  }, [simulatedClearance, analysisVersion]);
+
+  useEffect(() => {
+    if (activeTab === 'conflicts' && conflicts.length === 0 && !isLoading) {
+      fetchConflicts();
+    }
+  }, [activeTab]);
 
   return (
     <div className="space-y-6">
@@ -77,6 +83,38 @@ export default function ConflictRadarView({ currentUser, simulatedClearance }) {
 
       {/* Discrepancy Cards Loop */}
       <div className="space-y-6">
+        {isLoading && conflicts.length === 0 && (
+          <div className="py-20 text-center space-y-4">
+            <div className="w-10 h-10 border-2 border-rose-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-mono uppercase tracking-widest text-slate-500">
+              Cross-Examining Witness Statements Against Machine Records with On-Prem Intelligence...
+            </p>
+          </div>
+        )}
+
+        {!isLoading && conflicts.length === 0 && (
+          <LiquidGlass variant="panel" className="p-12 text-center space-y-4 border-slate-200">
+            <div className="w-12 h-12 bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+              <AlertOctagon className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 font-mono">
+                No Contradictions Currently Surfaced
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                No active discrepancies detected between sworn statements and technical records. Ensure evidence is uploaded and on-prem AI intelligence has been executed.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchConflicts}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-mono font-bold tracking-wider uppercase apple-press cursor-pointer inline-flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Re-Scan Evidence Conflicts
+            </button>
+          </LiquidGlass>
+        )}
+
         {conflicts.map((conf, idx) => (
           <LiquidGlass
             key={conf.conflict_id || idx}

@@ -2,7 +2,7 @@ import React from 'react';
 import LiquidGlass from './ui/LiquidGlass';
 import { Shield, ShieldAlert, Cpu, LogOut, Eye, CheckCircle2 } from 'lucide-react';
 
-export default function Header({ currentUser, simulatedClearance, setSimulatedClearance, onLogout }) {
+export default function Header({ currentUser, simulatedClearance, setSimulatedClearance, onLogout, activeCase }) {
   const isLevel2 = simulatedClearance === 'LEVEL_2';
 
   return (
@@ -27,8 +27,8 @@ export default function Header({ currentUser, simulatedClearance, setSimulatedCl
 
         <div className="flex items-center gap-2 text-xs font-mono">
           <span className="text-slate-400 text-[11px]">CASE DOSSIER:</span>
-          <span className="font-semibold text-slate-800 bg-slate-100/80 px-2.5 py-0.5 rounded-md border border-slate-200/80">
-            CASE-2026-ALPHA // EXFILTRATION
+          <span className="font-semibold text-slate-800 bg-slate-100/80 px-2.5 py-0.5 rounded-md border border-slate-200/80 truncate max-w-[240px]" title={activeCase?.title}>
+            {activeCase?.case_id || 'IR-2026-ALPHA'} // {activeCase?.title ? activeCase.title.substring(0, 18).toUpperCase() : 'ACTIVE'}
           </span>
         </div>
 
