@@ -104,10 +104,10 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
             key={idx}
             type="button"
             onClick={() => setSelectedCitation(citation || { label: part, id: refId })}
-            className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-all apple-press cursor-pointer hover:shadow-xs align-baseline"
+            className="inline-flex items-center gap-1.5 mx-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-100/90 hover:bg-blue-200 text-blue-900 border border-blue-300 transition-all apple-press cursor-pointer hover:shadow-xs align-baseline"
           >
             <span>{part}</span>
-            <ExternalLink className="w-2.5 h-2.5 text-blue-500" />
+            <ExternalLink className="w-3 h-3 text-blue-600" />
           </button>
         );
       }
@@ -267,17 +267,17 @@ export default function DossierView({ currentUser, simulatedClearance, analysisV
         {dossier.sections.map((section, sIdx) => (
           <LiquidGlass key={section.section_id} elevation={1} className="p-6 md:p-8 rounded-2xl border border-slate-200/80">
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-200/70">
-              <h2 className="text-lg md:text-xl font-bold text-slate-900 flex items-center gap-2.5">
-                <FileText className="w-5 h-5 text-blue-600" />
+              <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 flex items-center gap-3">
+                <FileText className="w-6 h-6 text-blue-600" />
                 {section.title}
               </h2>
-              <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 font-semibold">
+              <span className="text-xs font-mono uppercase px-3 py-1 bg-slate-100 text-slate-700 rounded-lg border border-slate-300 font-bold">
                 {section.section_id}
               </span>
             </div>
 
             {/* Narrative text with embedded interactive citation pills */}
-            <div className="text-sm md:text-base leading-relaxed text-slate-700 space-y-4">
+            <div className="text-base md:text-lg leading-relaxed text-slate-800 space-y-5">
               {(Array.isArray(section.content)
                 ? section.content.join('\n\n')
                 : (typeof section.content === 'string' ? section.content : String(section.content || ''))

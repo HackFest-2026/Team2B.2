@@ -13,6 +13,10 @@
     --glass-border: rgba(255, 255, 255, 0.6);
   }
 
+  html {
+    font-size: 16.5px;
+  }
+
   body {
     background-color: #f6f8fa;
     color: var(--text-primary);
@@ -21,8 +25,15 @@
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
     letter-spacing: -0.011em;
+    font-size: 1rem;
+    line-height: 1.55;
   }
 }
+
+/* Global legibility helpers for compact forensic badges */
+.text-\[9px\] { font-size: 11px !important; }
+.text-\[10px\] { font-size: 11.5px !important; }
+.text-\[11px\] { font-size: 12.5px !important; }
 
 /* Ambient light mesh gradient background for realistic glass refraction */
 .ambient-mesh {

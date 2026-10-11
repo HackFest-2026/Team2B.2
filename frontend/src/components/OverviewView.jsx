@@ -74,14 +74,14 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
           glowColor="rgba(0, 113, 227, 0.25)"
           className="p-5 space-y-2"
         >
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+          <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">
             <span>Sources Ingested</span>
-            <Database className="w-4 h-4 text-blue-600" />
+            <Database className="w-4.5 h-4.5 text-blue-600" />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
-            3 <span className="text-xs font-normal text-slate-400">/ 3 Formats</span>
+          <div className="text-3xl md:text-4xl font-extrabold text-slate-900 font-mono tracking-tight">
+            3 <span className="text-sm font-normal text-slate-400">/ 3 Formats</span>
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-xs md:text-sm text-slate-600">
             PDF Report, Chat TXT, Raw Syslog
           </div>
         </LiquidGlass>
@@ -92,14 +92,14 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
           glowColor="rgba(16, 185, 129, 0.25)"
           className="p-5 space-y-2"
         >
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+          <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">
             <span>Data Spillage Rate</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4.5 h-4.5 text-emerald-600" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-600 font-mono tracking-tight">
+          <div className="text-3xl md:text-4xl font-extrabold text-emerald-600 font-mono tracking-tight">
             0.00%
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-xs md:text-sm text-slate-600">
             Pre-retrieval clearance gate active
           </div>
         </LiquidGlass>
@@ -110,14 +110,14 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
           glowColor="rgba(99, 102, 241, 0.25)"
           className="p-5 space-y-2"
         >
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+          <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">
             <span>Attribution Guarantee</span>
-            <Hash className="w-4 h-4 text-indigo-600" />
+            <Hash className="w-4.5 h-4.5 text-indigo-600" />
           </div>
-          <div className="text-3xl font-extrabold text-slate-900 font-mono tracking-tight">
+          <div className="text-3xl md:text-4xl font-extrabold text-slate-900 font-mono tracking-tight">
             100%
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-xs md:text-sm text-slate-600">
             SHA-256 chunk cryptographic stamp
           </div>
         </LiquidGlass>
@@ -128,14 +128,14 @@ export default function OverviewView({ currentUser, simulatedClearance }) {
           glowColor="rgba(225, 29, 72, 0.28)"
           className="p-5 space-y-2"
         >
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+          <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider text-slate-500 font-bold">
             <span>Cross-Source Conflict</span>
-            <AlertOctagon className="w-4 h-4 text-rose-600" />
+            <AlertOctagon className="w-4.5 h-4.5 text-rose-600" />
           </div>
-          <div className="text-3xl font-extrabold text-rose-600 font-mono tracking-tight">
-            1 <span className="text-xs font-normal text-slate-400">Detected</span>
+          <div className="text-3xl md:text-4xl font-extrabold text-rose-600 font-mono tracking-tight">
+            1 <span className="text-sm font-normal text-slate-400">Detected</span>
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-xs md:text-sm text-slate-600">
             Interview vs. SSH session discrepancy
           </div>
         </LiquidGlass>

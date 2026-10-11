@@ -211,34 +211,34 @@ export default function CaseManagerView({ currentUser, onCaseChanged }) {
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {c.is_active && (
-                      <span className="shrink-0 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white uppercase tracking-wider">
+                      <span className="shrink-0 text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-blue-600 text-white uppercase tracking-wider">
                         Active
                       </span>
                     )}
-                    <span className="text-[10px] font-mono text-slate-400 truncate">{c.case_id}</span>
+                    <span className="text-xs font-mono font-bold text-slate-500 truncate">{c.case_id}</span>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
+                  <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
                     {c.title}
                   </h3>
                 </div>
-                <div className="shrink-0 p-2 bg-slate-100 border border-slate-200 rounded-xl">
+                <div className="shrink-0 p-2.5 bg-slate-100 border border-slate-200 rounded-xl">
                   <FolderOpen className={`w-5 h-5 ${c.is_active ? 'text-blue-600' : 'text-slate-400'}`} />
                 </div>
               </div>
 
               {/* Stats Row */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 bg-slate-50/80 border border-slate-100 rounded-lg">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase">Files</div>
-                  <div className="text-lg font-bold font-mono text-slate-900 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-blue-500" />
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="p-3 bg-slate-50/90 border border-slate-200 rounded-lg">
+                  <div className="text-xs font-mono text-slate-500 uppercase font-semibold">Evidence Files</div>
+                  <div className="text-xl font-bold font-mono text-slate-900 flex items-center gap-1.5 mt-0.5">
+                    <FileText className="w-4 h-4 text-blue-500" />
                     {c.total_files}
                   </div>
                 </div>
-                <div className="p-2.5 bg-slate-50/80 border border-slate-100 rounded-lg">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase">Chunks</div>
-                  <div className="text-lg font-bold font-mono text-slate-900 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5 text-indigo-500" />
+                <div className="p-3 bg-slate-50/90 border border-slate-200 rounded-lg">
+                  <div className="text-xs font-mono text-slate-500 uppercase font-semibold">Sealed Chunks</div>
+                  <div className="text-xl font-bold font-mono text-slate-900 flex items-center gap-1.5 mt-0.5">
+                    <Layers className="w-4 h-4 text-indigo-500" />
                     {c.total_chunks}
                   </div>
                 </div>

@@ -261,32 +261,32 @@ export default function WorkspaceView({ currentUser, simulatedClearance, onAnaly
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-extrabold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono text-xs md:text-sm font-extrabold text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
                       {evt.display_time}
                     </span>
-                    <span className="font-bold text-sm text-slate-900">{evt.title}</span>
+                    <span className="font-bold text-base text-slate-900">{evt.title}</span>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs font-mono">
                     {evt.conflict_anchor && (
-                      <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-extrabold text-[10px] flex items-center gap-1 border border-rose-300">
-                        <AlertTriangle className="w-3 h-3 text-rose-600" /> CONFLICT ANCHOR
+                      <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-extrabold text-xs flex items-center gap-1 border border-rose-300">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" /> CONFLICT ANCHOR
                       </span>
                     )}
-                    <span className="text-[10px] font-mono text-slate-500 uppercase px-2 py-0.5 bg-slate-100 rounded border border-slate-200">
+                    <span className="text-xs font-mono text-slate-600 uppercase px-2.5 py-0.5 bg-slate-100 rounded border border-slate-200 font-semibold">
                       {evt.source_type}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-700 leading-relaxed font-sans mb-3">
+                <p className="text-sm md:text-base text-slate-800 leading-relaxed font-sans mb-3">
                   {evt.description}
                 </p>
 
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs font-mono text-slate-500 pt-2 border-t border-slate-100">
                   <span className="text-slate-600">
-                    Source: <strong className="text-slate-800">{evt.source_file}</strong> • Anchor: {evt.chunk_id}
+                    Source: <strong className="text-slate-800">{evt.source_file}</strong> • Anchor: <strong className="text-blue-700">{evt.chunk_id}</strong>
                   </span>
                   <span className="truncate max-w-[200px] flex items-center gap-1">
                     <Hash className="w-2.5 h-2.5 text-slate-400" /> {evt.sha256}
