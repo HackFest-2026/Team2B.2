@@ -153,11 +153,8 @@ def verify_dossier_tamper_status(dossier_data: Dict[str, Any]) -> Dict[str, Any]
     content_matches = True
     recomputed_seal = None
     if sections and isinstance(sections, list) and len(sections) > 0:
-        if dossier_data.get("metadata", {}).get("is_empty"):
-            recomputed_seal = compute_sha256_text(f"EMPTY_CASE_{case_id}")
-        else:
-            narrative = "\n\n".join([f"{s.get('title', '')}\n{s.get('content', '')}" for s in sections])
-            recomputed_seal = compute_sha256_text(narrative)
+        narrative = "\n\n".join([f"{s.get('title', '')}\n{s.get('content', '')}" for s in sections])
+        recomputed_seal = compute_sha256_text(narrative)
         content_matches = (recomputed_seal.lower() == claimed_seal.lower())
 
     is_authentic = bool(signature_matches and content_matches)
@@ -214,7 +211,16 @@ def synthesize_dossier(
     and applies cryptographic hashing to ensure complete auditability.
     """
     if not chunks:
-        empty_seal = compute_sha256_text(f"EMPTY_CASE_{case_id}")
+        empty_sections = [
+            {
+                "section_id": "SEC-01",
+                "title": "1. Case Initialization & Evidence Status",
+                "content": f"Case {case_id} has been initialized in the cryptographic registry. No evidence files have been ingested yet. Please navigate to the Evidence Ingestion module to upload PDF reports, witness transcripts, or machine syslogs.",
+                "citations": []
+            }
+        ]
+        empty_narrative = "\n\n".join([f"{s['title']}\n{s['content']}" for s in empty_sections])
+        empty_seal = compute_sha256_text(empty_narrative)
         empty_sig = compute_agency_signature(empty_seal, case_id, user_clearance)
         return {
             "case_id": case_id,
@@ -239,14 +245,7 @@ def synthesize_dossier(
                 "zero_spillage_enforced": True,
                 "is_empty": True
             },
-            "sections": [
-                {
-                    "section_id": "SEC-01",
-                    "title": "1. Case Initialization & Evidence Status",
-                    "content": f"Case {case_id} has been initialized in the cryptographic registry. No evidence files have been ingested yet. Please navigate to the Evidence Ingestion module to upload PDF reports, witness transcripts, or machine syslogs.",
-                    "citations": []
-                }
-            ],
+            "sections": empty_sections,
             "citations": []
         }
 
