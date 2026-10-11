@@ -51,6 +51,14 @@ def detect_cross_source_conflicts(
             "title": "Departure Timestamp vs. Authenticated Machine Session",
             "severity": "CRITICAL",
             "category": "TEMPORAL_CONTRADICTION",
+            "clash_summary": {
+                "claimed_anchor": "Logged off completely and left office at 21:00 UTC",
+                "proven_anchor": f"Active SSH session authenticated from {syslog_ip} at 21:14:22 UTC",
+                "discrepancy_delta": "⚡ +14 MINUTE UNACCOUNTED WINDOW",
+                "takeaway": "Alice Chen claimed full disconnect at 21:00 UTC, but machine logs prove an active SSH terminal session 14 minutes later.",
+                "claim_highlight": "logged off completely at 21:00 UTC",
+                "proof_highlight": "Accepted publickey for alice_admin ... 21:14:22"
+            },
             "claim_a": {
                 "source_title": "Witness Investigative Interview",
                 "source_file": interview_logout_chunk["source_file"],
@@ -92,6 +100,14 @@ def detect_cross_source_conflicts(
             "title": "Access Denial vs. Immutable Database Exfiltration Trigger",
             "severity": "CRITICAL",
             "category": "FACTUAL_INCONSISTENCY",
+            "clash_summary": {
+                "claimed_anchor": "Sworn denial of database touch or remote admin session",
+                "proven_anchor": f"PostgreSQL pg_dump query executed targeting '{target_table}' at 21:18:40 UTC",
+                "discrepancy_delta": "⚡ SWORN DENIAL VS IMMUTABLE 8.4 MB EXFILTRATION",
+                "takeaway": "Sworn denial directly contradicted by PostgreSQL query audit log recording a full table dump.",
+                "claim_highlight": "did not touch the database server",
+                "proof_highlight": f"SELECT pg_dump_table('{target_table}')"
+            },
             "claim_a": {
                 "source_title": "Witness Investigative Interview",
                 "source_file": interview_db_denial_chunk["source_file"],
@@ -146,6 +162,14 @@ def detect_cross_source_conflicts(
             "title": "Cinema Alibi vs. Machine ANPR & Access Sensor Telemetry",
             "severity": "CRITICAL",
             "category": "TEMPORAL_ALIBI_CONTRADICTION",
+            "clash_summary": {
+                "claimed_anchor": "Deposes continuous presence inside cinema 21:00-23:15 UTC",
+                "proven_anchor": "ANPR Camera Cam-04 logs SUV entering alleyway at 21:48:02 UTC",
+                "discrepancy_delta": "⚡ ALIBI DESTROYED BY SENSOR GRID",
+                "takeaway": "Suspect claims continuous movie attendance, but machine camera records his vehicle at crime scene during death window.",
+                "claim_highlight": "sat inside from 21:00 until 23:15",
+                "proof_highlight": "PLATE=7XYZ-892 ... 21:48:02 UTC"
+            },
             "claim_a": {
                 "source_title": "Suspect Interrogation Transcript",
                 "source_file": homicide_alibi_chunk["source_file"],
@@ -183,6 +207,14 @@ def detect_cross_source_conflicts(
             "title": "Subungual Trace Evidence vs. Physical Contact Denial",
             "severity": "CRITICAL",
             "category": "PHYSICAL_TRACE_CORRELATION",
+            "clash_summary": {
+                "claimed_anchor": "Autopsy recovers cobalt-blue nylon fibers under victim's nails",
+                "proven_anchor": "Suspect admitted driving Sapphire Blue SUV with identical interior",
+                "discrepancy_delta": "⚡ PHYSICAL STRUGGLE TRACE MATCH",
+                "takeaway": "Defensive struggle nylon fibers recovered under victim's fingernails match suspect vehicle interior.",
+                "claim_highlight": "cobalt-blue synthetic nylon upholstery fibers",
+                "proof_highlight": "identical interior upholstery"
+            },
             "claim_a": {
                 "source_title": "Forensic Autopsy Pathology Protocol",
                 "source_file": homicide_autopsy_chunk["source_file"],
