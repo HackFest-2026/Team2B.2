@@ -3,23 +3,25 @@
 > **Multi-Source Forensic Ingestion & Single Verifiable Document Engine**  
 > **Problem Statement 2B**: Multi-Source Ingestion into a Single Verifiable Document  
 > **Team**: Horizon Tech • **KLE Tech Hackfest 2026**  
-> **Repository**: [https://github.com/KartikShivshetty/VerionAI.git](https://github.com/KartikShivshetty/VerionAI.git)
+> **Official Repository**: [https://github.com/HackFest-2026/Team2B.2.git](https://github.com/HackFest-2026/Team2B.2.git)
 
 ---
 
 ## 📌 Executive Overview
 
-During incident investigations—whether cyberattacks, audit disputes, or criminal proceedings—evidence is fragmented across incompatible sources: **unstructured PDF reports**, **witness/suspect interview transcripts**, and **machine syslogs or sensor telemetry**. 
+During incident investigations—whether cyberattacks, compliance audits, or legal proceedings—evidence is fragmented across heterogeneous, incompatible sources: **unstructured PDF reports**, **witness/suspect interview transcripts**, and **machine syslogs or network telemetry**.
 
-Conventional LLM systems fail in these high-stakes environments because they hallucinate, cannot prove sources, and lack strict clearance boundaries, risking catastrophic data spillage.
+Conventional LLM systems fail in these high-assurance environments: they hallucinate, cannot prove sources, lack strict clearance boundaries, and leave reports vulnerable to silent in-transit tampering.
 
-**VERION AI** solves this by establishing a **100% on-premise, local-first forensic intelligence system**:
-1. **Multi-Source Normalization**: Ingests PDFs, chat/interview transcripts, and machine syslogs into cryptographically sealed chunk units.
-2. **SHA-256 Cryptographic Provenance**: Every chunk receives an immutable FIPS 180-4 SHA-256 fingerprint bound to its source file hash and character span.
-3. **Pre-Retrieval Zero-Spillage Security Gate**: Enforces physical separation between Level 1 (Unclassified/Public) and Level 2 (Restricted/Internal) records before data retrieval.
-4. **Automated Conflict Radar**: Cross-examines witness testimony against immutable machine syslogs to expose temporal and factual contradictions without silently resolving them.
-5. **Single Verifiable Document Synthesis**: Generates an authoritative incident dossier where 100% of factual assertions are anchored to interactive, mathematically verifiable citations (`[Ref 01]`, `[Ref 02]`).
-6. **Local LLM Engine**: Powered by on-premise Ollama (`llama3.2:latest`) with deterministic heuristic fallbacks—ensuring zero sensitive evidence ever leaves the local perimeter.
+**VERION AI** solves this by establishing a **100% on-premise, mathematically verifiable forensic intelligence system**:
+1. **Pre-Ingestion Zero-Trust Malware Shield**: Scans all incoming files in memory before disk writing, blocking polyglot executables, weaponized PDF `/Launch` exploits, and EICAR threats.
+2. **Multi-Source Normalization**: Ingests PDFs, chat/interview transcripts, and machine syslogs into cryptographically sealed chunk units.
+3. **SHA-256 Cryptographic Provenance**: Every chunk receives an immutable FIPS 180-4 SHA-256 fingerprint bound to its source file hash and character span.
+4. **Pre-Retrieval Zero-Spillage Security Gate**: Enforces physical separation between Level 1 (Unclassified/Public) and Level 2 (Restricted/Internal) records before data retrieval.
+5. **Automated Conflict Radar**: Cross-examines witness testimony against immutable machine syslogs to expose temporal and factual contradictions without silently resolving them.
+6. **Single Verifiable Document Synthesis**: Generates an authoritative incident dossier where 100% of factual assertions are anchored to interactive, mathematically verifiable citations (`[Ref 01]`, `[Ref 02]`).
+7. **In-Transit Tamper Detection**: Dual-stamped with a master SHA-256 narrative digest and custodial HMAC-SHA256 signature, validated via web portal or air-gapped CLI.
+8. **Local LLM Engine**: Powered by on-premise Ollama (`llama3.2:latest`) with deterministic heuristic fallbacks—ensuring zero sensitive evidence ever leaves the local perimeter.
 
 ---
 
@@ -33,7 +35,7 @@ The platform enforces strict Role-Based Access Control with pre-retrieval cleara
 | **Senior Forensic Investigator** | `investigator_l2` | `Investigate2026!` | `LEVEL_2` | Unredacted evidence inspection, raw machine syslogs, conflict radar analysis, dossier synthesis |
 | **Public Compliance Auditor** | `auditor_l1` | `Audit2026!` | `LEVEL_1` | Sanitized public audit view; Level 2 evidence and citations are cryptographically masked (zero data spillage) |
 
-> **Security Rule (Zero Data Spillage)**: If a user logs in with `LEVEL_1` clearance, `LEVEL_2` chunks and raw internal IP addresses/SQL queries are physically excluded at the data store level—guaranteeing zero leakage.
+> **Security Rule (Zero Data Spillage)**: If a user logs in with `LEVEL_1` clearance, `LEVEL_2` chunks and raw internal IP addresses/SQL queries are physically excluded at the data store level—guaranteeing 0.00% data leakage.
 
 ---
 
@@ -45,38 +47,93 @@ The interface provides an Apple-inspired, fluid glassmorphic forensic console or
 | :--- | :--- | :--- |
 | 📂 | **Case Manager** | Multi-case registry allowing officers to create new cases, switch active cases, and view chunk summaries. |
 | 📊 | **Investigation Overview** | Real-time forensic telemetry, ingestion metrics, security clearance indicator, and case KPIs. |
-| 📥 | **Evidence Ingestion** | Upload multi-source files (PDF, TXT, LOG) with explicit security classification prompts (`LEVEL_1` vs `LEVEL_2`), view cryptographic chunk passports, or reload ground truth benchmarks. |
-| ⏱️ | **Investigation Workspace** | Chronological multi-source incident reconstruction and entity resolution matrix (actors, systems, IPs). Run on-premise AI intelligence with one click. |
-| ⚠️ | **Conflict Radar** | Side-by-side cross-examination comparing human testimony against immutable machine logs. Surfaces temporal and factual contradictions with actionable forensic directives. |
+| 📥 | **Evidence Ingestion** | Upload multi-source files with active Malware Shield defense, EICAR test probe button, classification tagging (`LEVEL_1` vs `LEVEL_2`), and quarantine incident logs. |
+| ⏱️ | **Investigation Workspace** | Chronological multi-source incident reconstruction and entity resolution matrix (actors, systems, IPs) with clearance masking. |
+| ⚠️ | **Conflict Radar** | High-visibility cross-examination comparing human testimony against machine logs. Surfaces temporal and factual contradictions with actionable forensic directives. |
 | 📄 | **Synthesized Dossier** | The **Single Verifiable Document**. Four-section synthesized narrative with interactive citation pills linked to chunk hashes and master SHA-256 seal verification. |
-| 🛡️ | **Audit & Provenance** | Immutable evidence ledger table displaying file hashes, chunk fingerprints, and tamper-evident PDF export. |
+| 🛡️ | **Audit & Provenance** | Immutable evidence ledger table displaying file hashes, chunk fingerprints, quarantine audit logs, and tamper-evident PDF export. |
 
 ---
 
 ## ⚙️ Architecture & Data Pipeline
 
+```text
+[ PDF Reports ]   [ Witness Transcripts ]   [ Machine Syslogs ]
+       │                     │                      │
+       └─────────────────────┼──────────────────────┘
+                             ▼
+         [ Pre-Ingestion Zero-Trust Malware Shield ]
+         • In-Memory Inspection (Zero Disk Write on Threat)
+         • Polyglot & PE/ELF Disguised Binary Detection
+         • PDF /Launch Exploit & Reverse Shell Interception
+         • EICAR Standard Antivirus Test Quarantine
+                             ▼
+             [ Ingestion & Normalization Layer ]
+         PyMuPDF / Transcript Parser / Syslog Parser
+                             ▼
+          [ FIPS 180-4 SHA-256 Chunk Fingerprinting ]
+            sha256(file_hash + chunk_id + text)
+                             ▼
+       [ Pre-Retrieval Zero-Spillage Security Gate ]
+           LEVEL_1 (Public) ─── vs ─── LEVEL_2 (Secret)
+                             ▼
+        [ Local On-Prem Ollama (Llama 3.2 Engine) ]
+   Timeline Correlator ─ Conflict Radar ─ Dossier Synthesizer
+                             ▼
+         [ Single Verifiable Document (Dossier) ]
+           100% Traceable Inline Citation Anchors
+                             ▼
+     [ Dual Cryptographic Seal & Attestation Engine ]
+    • Master SHA-256 Narrative Digest (Avalanche Proof)
+    • Custodial HMAC-SHA256 Signature (Key Attestation)
+    • Page 1 Visual Seal Box + PDF Metadata Injection
+                             ▼
+    [ Air-Gapped Standalone Verifier & Web Sandbox ]
 ```
-[ PDF Reports ]   [ Interrogation Transcripts ]   [ Machine Syslogs ]
-       │                         │                         │
-       └─────────────────────────┼─────────────────────────┘
-                                 ▼
-                 [ Ingestion & Normalization Layer ]
-             PyMuPDF / Transcript Parser / Syslog Parser
-                                 ▼
-              [ FIPS 180-4 SHA-256 Chunk Sealer ]
-               sha256(file_hash + chunk_id + text)
-                                 ▼
-           [ Pre-Retrieval Zero-Spillage Security Gate ]
-               LEVEL_1 (Public) ─── vs ─── LEVEL_2 (Secret)
-                                 ▼
-            [ Local On-Prem Ollama (Llama 3.2 Engine) ]
-       Timeline Correlator ─ Conflict Radar ─ Dossier Synthesizer
-                                 ▼
-             [ Single Verifiable Document (Dossier) ]
-               100% Traceable Inline Citation Anchors
-                                 ▼
-              [ Tamper-Evident Cryptographic PDF Export ]
+
+---
+
+## 🔐 Anti-Tamper & Cryptographic Verification
+
+When you send an exported dossier (PDF or JSON) to a third party, they can verify that the file has **not been altered in transit** through 3 independent methods:
+
+### Method 1: Web Drag-and-Drop Verifier (`/api/verify/file`)
+* Open the **Synthesized Dossier** tab in Verion AI.
+* Click **"Verify & Anti-Tamper Info"** ➔ **Live File Verifier**.
+* Drop any exported `.pdf` or `.json` to get an instant verdict:
+  * `✅ VERIFIED AUTHENTIC: 100% UNTAMPERED`
+  * `🚨 TAMPER DETECTED: Narrative hash mismatch / signature invalid`
+
+### Method 2: Visual Inspection of the Page 1 Cryptographic Seal Box
+Every exported PDF contains an official seal box on Page 1:
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ CRYPTOGRAPHIC PROVENANCE TAMPER-EVIDENT SEAL (SHA-256)                      │
+│ DIGEST: f228597489006cbeea12bcd595caf1419cb7b57b78f61ae1524080298eb7d6da  │
+│ HMAC SIGNATURE: ba89ece136f40b357a2e39da8578593a... • SIGNED BY: Custodian  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Method 3: Air-Gapped Standalone CLI Verifier
+Third-party auditors can verify files completely offline without running the web server:
+```bash
+# Verify exported PDF
+python backend/export/verify_standalone.py Verion_Dossier_CASE-2026-X94_LEVEL_2.pdf
+
+# Verify exported JSON
+python backend/export/verify_standalone.py Verion_Dossier_CASE-2026-X94_LEVEL_2.json
+```
+
+---
+
+## 🛡️ Pre-Ingestion Malware Defense & Quarantine Engine
+
+To protect the evidence store against adversarial droppers, Verion AI enforces zero-trust scanning **before any file touches the filesystem**:
+* **Magic-Byte Polyglot Disguise Analysis:** Blocks Windows PE binaries (`MZ`) and Linux ELF binaries disguised under `.pdf` or `.txt` extensions.
+* **Weaponized PDF Defense:** Inspects PDF streams for `/Launch` actions (spawns OS processes), embedded executable attachments, and obfuscated JavaScript blocks.
+* **Reverse Shell Detection:** Catches encoded PowerShell droppers (`-enc`, `-w hidden`), Bash reverse sockets (`/dev/tcp/`), and Netcat shells (`-e`).
+* **Instant Quarantine:** Rejects malicious uploads with `HTTP 422 Unprocessable Content`, discards the buffer from memory, and logs an immutable audit trail.
+* **Safe EICAR Test Probe:** Evaluators can click the **"Test EICAR Probe"** button in the Evidence Ingestion UI to witness the instant quarantine alert live.
 
 ---
 
@@ -91,8 +148,8 @@ The interface provides an Apple-inspired, fluid glassmorphic forensic console or
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/KartikShivshetty/VerionAI.git
-cd VerionAI
+git clone https://github.com/HackFest-2026/Team2B.2.git
+cd Team2B.2
 ```
 
 ---
@@ -138,35 +195,12 @@ ollama pull llama3.2
 
 ---
 
----
-
-## 🔐 In-Transit Tamper-Evident Dossier Guarantee & Verification
-
-### The Core Problem:
-When an investigative summary report is exported (as PDF or JSON) and emailed to an auditor, judge, or executive, **what happens if someone in between alters the file** (e.g. changing an IP address from `10.240.1.45` to an innocent IP, shifting an exfiltration timestamp, or changing patient records from `42,000` to `42`)?
-
-### How Verion AI Solves & Detects In-Transit Tampering:
-Verion AI employs a **multi-layered cryptographic defense architecture**:
-
-1. **SHA-256 Avalanche Digest (FIPS 180-4)**:
-   The entire synthesized narrative, section headers, and citation references are canonically concatenated and hashed. Due to the cryptographic avalanche effect, changing even a single byte or character causes a completely different 64-character hexadecimal digest.
-2. **Custodial HMAC-SHA256 Digital Signature**:
-   The master digest is cryptographically signed by the Verion AI Custodian Authority using a server-side private key (`SECRET_KEY`). An adversary intercepting the file cannot forge a valid signature because they lack the secret key.
-3. **Dual PDF Forensic Embeddings**:
-   - **Visual Custody Seal Box**: Stamped on Page 1 displaying the SHA-256 digest, clearance level, and HMAC signature.
-   - **Embedded Trailer Metadata**: Digitally injected into document properties (`doc.metadata["keywords"] = "SHA256:... SIG:..."`) readable by any standard PDF parser.
-4. **Interactive In-Transit Tamper Verification & Sandbox**:
-   - **Upload File Verifier (`/api/verify/file`)**: Drop any exported `.pdf` or `.json` to instantly verify cryptographic integrity against the server custodian.
-   - **Live Tamper Simulation Sandbox**: Built directly into the UI, allowing reviewers to test altering one character and visually observing the instant tamper alert!
-
----
-
-### Step 5: Verification & Testing
-Run the comprehensive test suite validating authentication, ingestion, zero-spillage gating, conflict detection, dossier synthesis, tamper detection, and export:
+### Step 5: Run Automated Verification Tests
+Run the comprehensive test suite validating authentication, ingestion, zero-spillage gating, conflict detection, dossier synthesis, PDF export, tamper detection, and malware quarantine:
 ```bash
-python -m pytest
+python -m pytest backend/tests -v
 ```
-* Expected output: **33 passed (100%)**
+* Expected output: **43 passed (100%)**
 
 ---
 
